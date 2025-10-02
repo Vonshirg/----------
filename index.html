@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>СВЯЗЬ</title>
+
+  <!-- React + ReactDOM (UMD) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- jsQR fallback for QR decoding from image -->
+  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+
+  <style>
+    /* --- Sber-like dark green theme styles --- */
+    :root{
+      --bg-dark: #07120d;
+      --sber-green: #0b7a43;
+      --sber-green-2: #0f8a4f;
+      --card: #0f231c;
+      --muted: #97a79a;
+      --accent: #67c077;
+      --surface: #0b261d;
+      --bubble-send: rgba(107,160,120,0.18);
+      --text: #e6efe7;
+      --glass: rgba(255,255,255,0.03);
+      --radius: 14px;
+      --transition: 180ms ease;
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+    }
+    [data-theme="light"]{
+      --bg-dark: #f6f7f3;
+      --sber-green: #0b7a43;
+      --sber-green-2: #0f8a4f;
+      --card: #ffffff;
+      --muted: #6b6f67;
+      --accent: #0b7a43;
+      --surface: #ffffff;
+      --bubble-send: rgba(11,122,67,0.08);
+      --text: #10220f;
+      --glass: rgba(0,0,0,0.03);
+    }
+
+    html,body,#root{
+      height:100%;
+      margin:0;
+      background: linear-gradient(180deg, rgba(6,25,16,1) 0%, rgba(9,33,20,1) 60%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .app {
+      max-width:1100px;
+      margin:0 auto;
+      padding:16px;
+      box-sizing:border-box;
+    }
+
+    header.app-header{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .brand .logo{
+      width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--sber-green),var(--sber-green-2));display:flex;align-items:center;justify-content:center;font-weight:700;
+      box-shadow: 0 6px 18px rgba(5,65,48,0.24);
+    }
+    h1{font-size:18px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+
+    /* Grid of clients */
+    .clients-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+      gap:12px;
+      margin-top:16px;
+    }
+    .client-card{
+      background:var(--card);
+      border-radius:12px;
+      padding:12px;
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor:pointer;
+    }
+    .client-card:hover{ transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,0.42); }
+    .client-card img{width:56px;height:56px;object-fit:contain}
+    .client-card .name{font-size:14px;text-align:center;color:var(--text)}
+
+    /* Buttons row */
+    .actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+    .btn{
+      background:linear-gradient(180deg,var(--sber-green),var(--sber-green-2));
+      color:white;padding:12px 16px;border-radius:12px;border:none;font-weight:600;cursor:pointer;
+      box-shadow: 0 8px 18px rgba(6,55,41,0.25);
+      transition: transform var(--transition), opacity var(--transition);
+    }
+    .btn.ghost{ background: none; color:var(--text); border:1px solid rgba(255,255,255,0.04); box-shadow:none;}
+    .btn.sm{ padding:8px 10px;font-size:14px;border-radius:10px;}
+    .btn:active{ transform: translateY(1px); }
+
+    /* Page card */
+    .page{
+      margin-top:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+      padding:12px;border-radius:12px;
+    }
+
+    /* Instruction page */
+    .instr-header{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    .search{
+      flex:1;display:flex;gap:8px;
+    }
+    .search input{flex:1;padding:10px;border-radius:10px;border:none;background:var(--glass);color:var(--text)}
+    .back{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:10px;color:var(--text)}
+
+    .placeholder{
+      display:flex;gap:12px;align-items:center;padding:20px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      min-height:140px;
+    }
+    .placeholder img{ width:120px; height:120px; object-fit:contain; border-radius:10px; background: rgba(255,255,255,0.02); padding:8px }
+    .placeholder p{margin:0;color:var(--muted);font-size:15px;line-height:1.4}
+
+    /* Chat */
+    .chat-wrap{display:flex;flex-direction:column;height:60vh;min-height:360px}
+    .messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .bubble{max-width:78%;padding:10px 12px;border-radius:12px;display:inline-block}
+    .bubble.me{align-self:flex-end;background:var(--bubble-send);color:var(--text)}
+    .bubble.support{align-self:flex-start;background:rgba(255,255,255,0.02);color:var(--text)}
+    .msg-meta{font-size:12px;color:var(--muted);margin-top:6px; text-align:right}
+
+    .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,0.02)}
+    .chat-input input[type="text"]{flex:1;padding:10px;border-radius:10px;border:none;background:var(--glass);color:var(--text)}
+    .icon-btn{background:transparent;border:none;color:var(--text);padding:8px;border-radius:10px}
+
+    /* File list */
+    .file-preview{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,0.02)}
+    .file-preview a{color:var(--accent);text-decoration:underline}
+
+    /* Phone modal */
+    .phone-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:320px; max-width:90%; background:var(--card); padding:12px; border-radius:16px; z-index:2000; box-shadow:0 24px 60px rgba(0,0,0,0.6);}
+    .overlay{ position:fixed; left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5); z-index:1500;}
+
+    /* Footer / nav */
+    .bottom-nav{display:flex;gap:12px;justify-content:space-around;padding:12px;margin-top:20px;background:transparent}
+
+    /* small screens adjustments */
+    @media (max-width:560px){
+      .client-card img{width:48px;height:48px}
+      .brand h1{font-size:16px}
+      .chat-wrap{height:58vh}
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+  (function(){
+    const e = React.createElement;
+    const {useState, useEffect, useRef} = React;
+
+    // ---- Utilities ----
+    const uid = (prefix='id') => prefix + Math.random().toString(36).slice(2,9);
+    const storage = {
+      get(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback } },
+      set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+    };
+
+    // seed clients
+    const DEFAULT_CLIENTS = [
+      {id:'sber', name:'Сбер', logo:'./assets/sber_logo.png'},
+      {id:'bank_a', name:'Альфа', logo:'./assets/bank_a.png'},
+      {id:'bank_b', name:'Т-банк', logo:'./assets/bank_b.png'},
+      {id:'bank_c', name:'СовКом Банк', logo:'./assets/bank_c.png'}
+    ];
+
+    // --- Simple hash router ---
+    function useHashRoute() {
+      const [hash, setHash] = useState(location.hash || '#/');
+      useEffect(() => {
+        const onHash = () => setHash(location.hash || '#/');
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }, []);
+      const navigate = (to) => { location.hash = to; setHash(to); }
+      return { hash, navigate };
+    }
+
+    // --- App ---
+    function App(){
+      const {hash, navigate} = useHashRoute();
+      const [theme, setTheme] = useState(storage.get('theme','dark'));
+      const [clients] = useState(storage.get('clients', DEFAULT_CLIENTS));
+      const [chats, setChats] = useState(storage.get('chats', {
+        'sppous': [],
+        'curus': []
+      }));
+
+      useEffect(()=> {
+        storage.set('chats', chats);
+      }, [chats]);
+
+      useEffect(()=> {
+        document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+        storage.set('theme', theme);
+      }, [theme]);
+
+      // route parsing
+      const route = (hash || '#/').replace(/^#/, '');
+      const parts = route.split('/').filter(Boolean);
+      let page = 'home', param = null;
+      if(parts.length>0){
+        if(parts[0]==='client'){ page='client'; param = parts[1]; }
+        if(parts[0]==='chat'){ page='chat'; param = parts[1]; }
+        if(parts[0]==='qr'){ page='qr'; }
+      }
+
+      const sendMessage = (chatId, msg) => {
+        const newMsg = {...msg, id: uid('m'), ts: Date.now()};
+        setChats(prev => {
+          const copy = {...prev};
+          copy[chatId] = [...(copy[chatId]||[]), newMsg];
+          return copy;
+        });
+      };
+
+      const attachFileToChat = (chatId, file) => {
+        const url = URL.createObjectURL(file);
+        sendMessage(chatId, {type:'file', fileName:file.name, url});
+      };
+
+      const pushImageFromCapture = (chatId, file) => {
+        const url = URL.createObjectURL(file);
+        sendMessage(chatId, {type:'image', url});
+      };
+
+      return e('div',{className:'app'},
+        e(Header, {theme, setTheme, navigate}),
+        e('div', {className:'page'},
+          page==='home' && e(HomePage, {clients, navigate}),
+          page==='client' && e(ClientPage, {clientId:param, clients, navigate}),
+          page==='chat' && e(ChatPage, {
+            chatId: param,
+            chats:chats[param] || [],
+            onSend: (m)=> sendMessage(param, m),
+            onAttach: (file)=> attachFileToChat(param, file),
+            onImage: (file)=> pushImageFromCapture(param, file),
+            navigate
+          }),
+          page==='qr' && e(QRScanner, {onResult: (r)=> {
+            sendMessage('sppous', {type:'system', text:'QR: '+r});
+            sendMessage('curus', {type:'system', text:'QR: '+r});
+            alert('QR result: ' + r);
+            navigate('#/');
+          }, navigate})
+        ),
+        e('div',{className:'bottom-nav'},
+          e('button',{className:'btn ghost', onClick:()=>navigate('#/')}, 'Главный'),
+          e('button',{className:'btn ghost', onClick:()=>navigate('#/chat/sppous')}, 'Чат СППОУС'),
+          e('button',{className:'btn ghost', onClick:()=>navigate('#/chat/curus')}, 'Чат ЦУРУС'),
+          e('button',{className:'btn ghost', onClick:()=>navigate('#/qr')}, 'Сканер QR')
+        )
+      );
+    }
+
+    function Header({theme,setTheme,navigate}){
+      return e('header',{className:'app-header'},
+        e('div',{className:'brand'},
+          e('div',{className:'logo'}, 'С'),
+          e('div',null, e('h1',null,'СВЯЗЬ'), e('div',{style:{fontSize:12,color:'var(--muted)'}}, 'offline demo'))
+        ),
+        e('div',{className:'controls'},
+          e('button',{className:'btn sm', onClick:()=> { setTheme(t => t==='light' ? 'dark' : 'light'); }}, theme==='light' ? '🌙 Тёмная' : '☀️ Светлая'),
+          e('button',{className:'btn sm', onClick:()=> navigate('#/qr')}, 'QR'),
+          e('button',{className:'btn sm', onClick:()=> navigate('#/chat/sppous')}, 'Чат СППОУС')
+        )
+      );
+    }
+
+    function HomePage({clients,navigate}){
+      return e('div',null,
+        e('div',{className:'clients-grid'},
+          clients.map(c => (
+            e('div',{key:c.id,className:'client-card', onClick:()=> navigate('#/client/'+c.id)},
+              e('img',{src:c.logo, alt:c.name, onError:(ev)=>{ ev.target.src='https://via.placeholder.com/56x56/666666/ffffff?text=?'} }),
+              e('div',{className:'name'}, c.name)
+            )
+          ))
+        ),
+        e('div',{className:'actions-row'},
+          e('button',{className:'btn', onClick:()=> navigate('#/chat/sppous')}, 'Чат поддержки СППОУС'),
+          e('button',{className:'btn', onClick:()=> navigate('#/chat/curus')}, 'Чат поддержки ЦУРУС'),
+          e('button',{className:'btn ghost', onClick:()=> navigate('#/qr') }, 'Сканер QR'),
+          e('button',{className:'btn ghost', onClick:()=> alert('Открыть локальные памятки (будет в версии с файлами)')}, 'Памятки (локально)')
+        )
+      );
+    }
+
+    function ClientPage({clientId, clients, navigate}){
+      const client = clients.find(c=>c.id===clientId) || {name:'Клиент', logo:'https://via.placeholder.com/56x56/666666/ffffff?text=?'};
+      return e('div',null,
+        e('div',{className:'instr-header'},
+          e('button',{className:'back', onClick:()=> navigate('#/')}, '← Назад'),
+          e('div',{className:'search'}, e('input',{placeholder:'Поиск в памятке...'})),
+          e('div',null, e('button',{className:'btn sm', onClick:()=> alert('Открыть PDF (заглушка)')}, 'Открыть PDF'))
+        ),
+        e('div',{className:'placeholder'},
+          e('img',{src:'./assets/Кот.jpg', alt:'PDF'}),
+          e('p',null, 'PDF документ — в настоящий момент памятка разрабатывается, возвращайтесь позже...')
+        )
+      );
+    }
+    function showCatRating() {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center;
+    justify-content: center; z-index: 1000;
+  `;
+  
+  modal.innerHTML = `
+    <div style="
+      background: var(--card); padding: 20px; border-radius: 16px;
+      text-align: center; max-width: 300px; width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    ">
+      <h3 style="margin: 0 0 15px 0; color: var(--text);">Оцените нас!</h3>
+      <img src="assets/cat2.png" 
+           style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 10px 0;"
+           onerror="this.style.display='none'">
+      <p style="color: var(--muted); margin: 10px 0 20px 0;">Как вам помощь техподдержки?</p>
+      <div style="display: flex; gap: 5px; justify-content: center; margin: 15px 0;">
+        ${[1,2,3,4,5].map(i => 
+          `<button class="btn sm" onclick="closeModal(${i})" style="font-size: 18px;">⭐</button>`
+        ).join('')}
+      </div>
+      <button class="btn ghost" onclick="this.closest('div[style]').parentElement.remove()">Позже</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Функция для закрытия с оценкой
+  window.closeModal = function(rating) {
+    alert(`Спасибо за оценку: ${rating} звезд! 🐱`);
+    modal.remove();
+  };
+  
+  // Закрытие по клику на оверлей
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+    function ChatPage({chatId, chats, onSend, onAttach, onImage, navigate}){
+      const [text, setText] = useState('');
+      const fileRef = useRef(null);
+      const cameraRef = useRef(null);
+      const messagesRef = useRef(null);
+
+      useEffect(()=> {
+        if(messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+      }, [chats]);
+
+      const handleSend = ()=> {
+        if(!text.trim()) return;
+        onSend({type:'text', text});
+        setText('');
+      };
+
+      const handleAttach = (e) => {
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        onAttach(f);
+        e.target.value = '';
+      };
+
+      const handleCamera = (e) => {
+        const f = e.target.files && e.target.files[0];
+        if(!f) return;
+        onImage(f);
+        e.target.value = '';
+      };
+
+      const doCall = () => {
+        const tel = '+78005553535';
+        window.open('tel:' + tel, '_self');
+        showPhoneModal(tel);
+      };
+
+      function showPhoneModal(tel){
+        const modal = document.createElement('div');
+        modal.innerHTML = '<div class="overlay"></div><div class="phone-modal"><h3>Звонок техподдержке</h3><p>Номер: '+tel+'</p><div style="display:flex;gap:8px;margin-top:12px"><button id="endBtn" class="btn">Завершить</button></div></div>';
+        document.body.appendChild(modal);
+        modal.querySelector('#endBtn').addEventListener('click', ()=> {
+          document.body.removeChild(modal);
+        });
+      }
+
+      return e('div',null,
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+          e('div',null, e('button',{className:'back', onClick:()=> navigate('#/')}, '← Назад'), e('span',{style:{marginLeft:12,fontWeight:700}}, chatId.toUpperCase())),
+          e('div',null,
+            e('button',{className:'btn sm', onClick:doCall}, '📞 Позвонить'),
+            e('button',{className:'btn sm', onClick:()=> showCatRating()}, '⭐ Оценить')
+          )
+        ),
+        e('div',{className:'chat-wrap'},
+          e('div',{ref:messagesRef,className:'messages'},
+            (chats || []).map(m => {
+              if(m.type==='text') return e('div',{key:m.id,className:'bubble me'}, m.text, e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+              if(m.type==='image') return e('div',{key:m.id,className:'bubble me'}, e('img',{src:m.url, style:{maxWidth:220,borderRadius:8}}), e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+              if(m.type==='file') return e('div',{key:m.id,className:'bubble me'},
+                e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
+                e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
+              );
+              if(m.type==='system') return e('div',{key:m.id, style:{alignSelf:'center',color:'var(--muted)',fontSize:13}}, m.text);
+              return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
+            })
+          ),
+          e('div',{className:'chat-input'},
+            e('input',{type:'text', placeholder:'Напишите сообщение...', value:text, onChange:(e)=>setText(e.target.value), onKeyDown:(ev)=>{ if(ev.key==='Enter') handleSend(); }}),
+            e('label',{className:'icon-btn', title:'Прикрепить файл'},
+              e('input',{type:'file', style:{display:'none'}, ref:fileRef, onChange:handleAttach}),
+              '📎'
+            ),
+            e('label',{className:'icon-btn', title:'Открыть камеру'},
+              e('input',{type:'file', accept:'image/*', capture:'environment', style:{display:'none'}, ref:cameraRef, onChange:handleCamera}),
+              '📷'
+            ),
+            e('button',{className:'btn sm', onClick:handleSend}, 'Отправить')
+          )
+        )
+      );
+    }
+
+    function QRScanner({onResult, navigate}){
+      const videoRef = useRef(null);
+      const [hasCamera, setHasCamera] = useState(false);
+
+      const handleFile = (ev)=>{
+        const file = ev.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          const img = new Image();
+          img.onload = ()=>{
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img,0,0);
+            const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+            if(code) onResult(code.data);
+            else alert("QR не найден в изображении");
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      return e('div',null,
+        e('div',{style:{marginBottom:12}},
+          e('button',{className:'back', onClick:()=> navigate('#/')},'← Назад'),
+          e('span',{style:{marginLeft:12,fontWeight:700}},'Сканер QR')
+        ),
+        e('div',null,
+          e('p', null, 'Загрузите изображение с QR-кодом:'),
+          e('input',{type:'file', accept:'image/*', onChange:handleFile}),
+          e('div',{style:{marginTop:'20px'}},
+            e('button',{className:'btn ghost', onClick:()=> alert('Функция камеры будет доступна при HTTPS соединении')}, 'Использовать камеру')
+          )
+        )
+      );
+    }
+
+    // Рендеринг приложения
+    ReactDOM.render(e(App), document.getElementById('root'));
+  })();
+  </script>
+</body>
+</html>
