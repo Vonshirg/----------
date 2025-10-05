@@ -5,6 +5,8 @@ import App from './App'
 import Chat from './pages/Chat'
 import Scanner from './pages/Scanner'
 import './index.css'
+import { QrCode, Archive, LogOut, CheckCircle2 } from "lucide-react";
+import "./glass-ui.css";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

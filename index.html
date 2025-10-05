@@ -3,161 +3,592 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>СВЯЗЬ</title>
+  <title>Инкассатор — Техподдержка</title>
 
   <!-- React + ReactDOM (UMD) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- jsQR fallback for QR decoding from image -->
-  <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
   <style>
-    /* --- Sber-like dark green theme styles --- */
-    :root{
-      --bg-dark: #07120d;
-      --sber-green: #0b7a43;
-      --sber-green-2: #0f8a4f;
-      --card: #0f231c;
-      --muted: #97a79a;
-      --accent: #67c077;
-      --surface: #0b261d;
-      --bubble-send: rgba(107,160,120,0.18);
-      --text: #e6efe7;
-      --glass: rgba(255,255,255,0.03);
-      --radius: 14px;
-      --transition: 180ms ease;
-      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
-    }
-    [data-theme="light"]{
-      --bg-dark: #f6f7f3;
-      --sber-green: #0b7a43;
-      --sber-green-2: #0f8a4f;
-      --card: #ffffff;
-      --muted: #6b6f67;
-      --accent: #0b7a43;
-      --surface: #ffffff;
-      --bubble-send: rgba(11,122,67,0.08);
-      --text: #10220f;
-      --glass: rgba(0,0,0,0.03);
+    /* Ваши стили остаются без изменений */
+    /* ===========================
+       🌐 GLASS UI — универсальный стиль кнопок и иконок
+       =========================== */
+
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --glass-shadow: rgba(0, 0, 0, 0.25);
+      --text-light: #ffffff;
+      --accent-green: #0b7a43;
+      --accent-blue: #2196f3;
+      --accent-red: #e53935;
+      --accent-orange: #ff6b00;
+      --accent-purple: #9c27b0;
+      --radius: 18px;
+      --transition: all 0.25s ease;
     }
 
-    html,body,#root{
-      height:100%;
-      margin:0;
-      background: linear-gradient(180deg, rgba(6,25,16,1) 0%, rgba(9,33,20,1) 60%);
-      color:var(--text);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+    [data-theme="light"] {
+      --glass-bg: rgba(0, 0, 0, 0.06);
+      --glass-border: rgba(0, 0, 0, 0.12);
+      --glass-shadow: rgba(0, 0, 0, 0.15);
+      --text-light: #1a1a1a;
+      --accent-green: #0b7a43;
+      --accent-blue: #1976d2;
+      --accent-red: #d32f2f;
+      --accent-orange: #f57c00;
+      --accent-purple: #7b1fa2;
+    }
+
+    /* === Базовая стеклянная кнопка === */
+    .btn, .tile-btn, button:not(.back):not(.icon-btn) {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 24px;
+      border-radius: var(--radius);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      box-shadow: 0 8px 20px var(--glass-shadow);
+      color: var(--text-light);
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: var(--transition);
+      text-decoration: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn::before, .tile-btn::before, button:not(.back):not(.icon-btn)::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.2) 100%);
+      opacity: 0;
+      transform: translateX(-100%);
+      transition: opacity 0.4s ease, transform 0.6s ease;
+    }
+
+    .btn:hover::before, .tile-btn:hover::before, button:not(.back):not(.icon-btn):hover::before {
+      opacity: 0.6;
+      transform: translateX(100%);
+    }
+
+    /* Hover эффект */
+    .btn:hover, .tile-btn:hover, button:not(.back):not(.icon-btn):hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .btn:active, .tile-btn:active, button:not(.back):not(.icon-btn):active {
+      transform: scale(0.97);
+    }
+
+    /* === Иконки === */
+    .tile-icon, .btn-icon, .icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.85);
+      transition: var(--transition);
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    [data-theme="light"] .tile-icon,
+    [data-theme="light"] .btn-icon,
+    [data-theme="light"] .icon {
+      color: rgba(0,0,0,0.75);
+    }
+
+    button:hover .tile-icon {
+      color: #00d4ff;
+      transform: scale(1.1);
+    }
+
+    [data-theme="light"] button:hover .tile-icon {
+      color: var(--accent-blue);
+    }
+
+    /* === Цветовые варианты === */
+    .btn-primary, .tile-btn.primary {
+      background: rgba(11, 122, 67, 0.25);
+      border: 1px solid rgba(11, 122, 67, 0.4);
+      box-shadow: 0 8px 24px rgba(11, 122, 67, 0.3);
+    }
+    .btn-primary:hover { background: rgba(11, 122, 67, 0.35); }
+
+    .btn-secondary, .tile-btn.qr {
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.35), rgba(13, 79, 217, 0.45));
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 8px 40px rgba(33, 150, 243, 0.35);
+    }
+    .btn-secondary:hover { background: linear-gradient(135deg, rgba(13, 79, 217, 0.5), rgba(33, 150, 243, 0.5)); }
+
+    .btn-neutral, .tile-btn.archive {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .btn-neutral:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .btn-danger, .service-btn.emergency {
+      background: rgba(229, 57, 53, 0.25);
+      border: 1px solid rgba(229, 57, 53, 0.4);
+      box-shadow: 0 8px 24px rgba(229, 57, 53, 0.3);
+      color: #ff6b6b;
+    }
+    .btn-danger:hover { background: rgba(229, 57, 53, 0.35); }
+
+    /* === QR-кнопка — особенная === */
+    .tile-btn.qr {
+      font-size: 18px;
+      text-transform: uppercase;
+      padding: 22px 24px;
+      letter-spacing: 0.5px;
+      justify-content: center;
+    }
+    .tile-btn.qr .tile-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* === Варианты размера === */
+    .btn-sm { 
+      padding: 12px 16px; 
+      font-size: 14px; 
+      gap: 8px;
+    }
+    .btn-sm .tile-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ===========================
+       🎨 Базовые стили приложения
+       =========================== */
+
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    .overlay-dark {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(6, 25, 16, 0.85);
+      z-index: -1;
+    }
+
+    [data-theme="light"] .overlay-dark {
+      background: rgba(246, 247, 243, 0.85);
+    }
+
+    html, body, #root {
+      height: 100%;
+      margin: 0;
+      background: transparent;
+      color: var(--text-light);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
     }
 
     .app {
-      max-width:1100px;
-      margin:0 auto;
-      padding:16px;
-      box-sizing:border-box;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 1;
     }
 
-    header.app-header{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
+    /* Balance Header */
+    .balance-header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px var(--glass-shadow);
+      border: 1px solid var(--glass-border);
     }
-    .brand{
-      display:flex;
-      gap:12px;
-      align-items:center;
+    .balance-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-light);
+      margin-bottom: 4px;
     }
-    .brand .logo{
-      width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--sber-green),var(--sber-green-2));display:flex;align-items:center;justify-content:center;font-weight:700;
+    .balance-label {
+      font-size: 14px;
+      color: var(--text-light);
+      opacity: 0.8;
+    }
+
+    header.app-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .brand .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-green), #0f8a4f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
       box-shadow: 0 6px 18px rgba(5,65,48,0.24);
     }
-    h1{font-size:18px;margin:0}
-    .controls{display:flex;gap:8px;align-items:center}
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      color: var(--text-light);
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
-    /* Grid of clients */
-    .clients-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
-      gap:12px;
-      margin-top:16px;
+    /* Main page */
+    .main-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
     }
-    .client-card{
-      background:var(--card);
-      border-radius:12px;
-      padding:12px;
-      display:flex;flex-direction:column;align-items:center;gap:8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-      transition: transform var(--transition), box-shadow var(--transition);
-      cursor:pointer;
-    }
-    .client-card:hover{ transform: translateY(-4px); box-shadow: 0 14px 30px rgba(0,0,0,0.42); }
-    .client-card img{width:56px;height:56px;object-fit:contain}
-    .client-card .name{font-size:14px;text-align:center;color:var(--text)}
 
-    /* Buttons row */
-    .actions-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-    .btn{
-      background:linear-gradient(180deg,var(--sber-green),var(--sber-green-2));
-      color:white;padding:12px 16px;border-radius:12px;border:none;font-weight:600;cursor:pointer;
-      box-shadow: 0 8px 18px rgba(6,55,41,0.25);
-      transition: transform var(--transition), opacity var(--transition);
+    /* Service page */
+    .service-header {
+      text-align: center;
+      margin-bottom: 30px;
     }
-    .btn.ghost{ background: none; color:var(--text); border:1px solid rgba(255,255,255,0.04); box-shadow:none;}
-    .btn.sm{ padding:8px 10px;font-size:14px;border-radius:10px;}
-    .btn:active{ transform: translateY(1px); }
+    .client-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .client-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--accent-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+    .service-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .service-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 16px 24px;
+      border-radius: var(--radius);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      box-shadow: 0 8px 20px var(--glass-shadow);
+      color: var(--text-light);
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: var(--transition);
+      text-decoration: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .input-label {
+      font-size: 14px;
+      color: var(--text-light);
+      opacity: 0.8;
+    }
+    .us-input {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: var(--text-light);
+      font-size: 16px;
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+    }
+    .us-input:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 2px rgba(11, 122, 67, 0.2);
+    }
+    .us-input.error {
+      border-color: var(--accent-red);
+    }
+    .error-text {
+      color: var(--accent-red);
+      font-size: 14px;
+      margin-top: 4px;
+    }
 
     /* Page card */
-    .page{
-      margin-top:18px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-      padding:12px;border-radius:12px;
+    .page {
+      margin-top: 18px;
     }
 
     /* Instruction page */
-    .instr-header{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-    .search{
-      flex:1;display:flex;gap:8px;
+    .instr-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
     }
-    .search input{flex:1;padding:10px;border-radius:10px;border:none;background:var(--glass);color:var(--text)}
-    .back{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:10px;color:var(--text)}
+    .back {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      padding: 8px 12px;
+      border-radius: 10px;
+      color: var(--text-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
 
-    .placeholder{
-      display:flex;gap:12px;align-items:center;padding:20px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      min-height:140px;
+    .placeholder {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 20px;
+      border-radius: var(--radius);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      min-height: 140px;
     }
-    .placeholder img{ width:120px; height:120px; object-fit:contain; border-radius:10px; background: rgba(255,255,255,0.02); padding:8px }
-    .placeholder p{margin:0;color:var(--muted);font-size:15px;line-height:1.4}
+    .placeholder img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      padding: 8px;
+    }
+    .placeholder p {
+      margin: 0;
+      color: var(--text-light);
+      opacity: 0.8;
+      font-size: 15px;
+      line-height: 1.4;
+    }
 
     /* Chat */
-    .chat-wrap{display:flex;flex-direction:column;height:60vh;min-height:360px}
-    .messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-    .bubble{max-width:78%;padding:10px 12px;border-radius:12px;display:inline-block}
-    .bubble.me{align-self:flex-end;background:var(--bubble-send);color:var(--text)}
-    .bubble.support{align-self:flex-start;background:rgba(255,255,255,0.02);color:var(--text)}
-    .msg-meta{font-size:12px;color:var(--muted);margin-top:6px; text-align:right}
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 60vh;
+      min-height: 360px;
+    }
+    .messages {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bubble {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      display: inline-block;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+    }
+    .bubble.me {
+      align-self: flex-end;
+      background: rgba(11, 122, 67, 0.2);
+      border-color: rgba(11, 122, 67, 0.3);
+    }
+    .bubble.support {
+      align-self: flex-start;
+      background: var(--glass-bg);
+    }
 
-    .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,0.02)}
-    .chat-input input[type="text"]{flex:1;padding:10px;border-radius:10px;border:none;background:var(--glass);color:var(--text)}
-    .icon-btn{background:transparent;border:none;color:var(--text);padding:8px;border-radius:10px}
+    .msg-meta {
+      font-size: 12px;
+      color: var(--text-light);
+      opacity: 0.6;
+      margin-top: 6px;
+      text-align: right;
+    }
 
-    /* File list */
-    .file-preview{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,0.02)}
-    .file-preview a{color:var(--accent);text-decoration:underline}
+    .chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .chat-input input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      color: var(--text-light);
+    }
+    .chat-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text-light);
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover {
+      background: var(--glass-bg);
+      border-color: var(--glass-border);
+    }
 
     /* Phone modal */
-    .phone-modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:320px; max-width:90%; background:var(--card); padding:12px; border-radius:16px; z-index:2000; box-shadow:0 24px 60px rgba(0,0,0,0.6);}
-    .overlay{ position:fixed; left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5); z-index:1500;}
+    .phone-modal {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 320px;
+      max-width: 90%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      padding: 24px;
+      border-radius: var(--radius);
+      z-index: 2000;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      text-align: center;
+      border: 1px solid var(--glass-border);
+    }
+    .overlay {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1500;
+      backdrop-filter: blur(5px);
+    }
+
+    /* Rating stars */
+    .rating-stars {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .star {
+      font-size: 24px;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-light);
+      opacity: 0.5;
+    }
+    .star:hover,
+    .star.active {
+      color: #ffd700;
+      opacity: 1;
+      transform: scale(1.2);
+    }
+
+    /* Success modal */
+    .success-modal {
+      background: rgba(39, 174, 96, 0.9);
+      border: 1px solid rgba(39, 174, 96, 0.6);
+    }
 
     /* Footer / nav */
-    .bottom-nav{display:flex;gap:12px;justify-content:space-around;padding:12px;margin-top:20px;background:transparent}
+    .bottom-nav {
+      display: flex;
+      gap: 12px;
+      justify-content: space-around;
+      padding: 16px;
+      margin-top: 20px;
+      background: var(--glass-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Archive view */
+    .archive-messages {
+      background: var(--glass-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--glass-border);
+    }
 
     /* small screens adjustments */
-    @media (max-width:560px){
-      .client-card img{width:48px;height:48px}
-      .brand h1{font-size:16px}
-      .chat-wrap{height:58vh}
+    @media (max-width: 560px) {
+      .brand h1 { font-size: 16px; }
+      .chat-wrap { height: 58vh; }
+      .btn, .tile-btn { padding: 14px 20px; }
     }
   </style>
 </head>
@@ -176,13 +607,13 @@
       set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
     };
 
-    // seed clients
-    const DEFAULT_CLIENTS = [
-      {id:'sber', name:'Сбер', logo:'./assets/sber_logo.png'},
-      {id:'bank_a', name:'Альфа', logo:'./assets/bank_a.png'},
-      {id:'bank_b', name:'Т-банк', logo:'./assets/bank_b.png'},
-      {id:'bank_c', name:'СовКом Банк', logo:'./assets/bank_c.png'}
-    ];
+    // Данные клиентов
+    const CLIENTS_DATA = {
+      1: { name: 'Сбер', shortName: 'Сбер', logo: 'С', color: '#0b7a43' },
+      2: { name: 'Альфа Банк', shortName: 'Альфа', logo: 'А', color: '#ef3124' },
+      3: { name: 'Совкомбанк', shortName: 'Совком', logo: 'С', color: '#8cc054' },
+      4: { name: 'Т-Банк', shortName: 'Т-Банк', logo: 'Т', color: '#ff6b00' }
+    };
 
     // --- Simple hash router ---
     function useHashRoute() {
@@ -200,29 +631,56 @@
     function App(){
       const {hash, navigate} = useHashRoute();
       const [theme, setTheme] = useState(storage.get('theme','dark'));
-      const [clients] = useState(storage.get('clients', DEFAULT_CLIENTS));
+      const [balance, setBalance] = useState(storage.get('balance', 0));
       const [chats, setChats] = useState(storage.get('chats', {
-        'sppous': [],
-        'curus': []
+        'client': [],
+        'sppous': []
       }));
+      const [archive, setArchive] = useState(storage.get('archive', []));
 
       useEffect(()=> {
         storage.set('chats', chats);
       }, [chats]);
 
       useEffect(()=> {
-        document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+        storage.set('archive', archive);
+      }, [archive]);
+
+      useEffect(()=> {
+        storage.set('balance', balance);
+      }, [balance]);
+
+      useEffect(()=> {
+        document.documentElement.setAttribute('data-theme', theme);
         storage.set('theme', theme);
       }, [theme]);
+
+      const addPoints = (points) => {
+        setBalance(prev => {
+          const newBalance = prev + points;
+          storage.set('balance', newBalance);
+          return newBalance;
+        });
+      };
+
+      const clearChat = (chatId) => {
+        setChats(prev => {
+          const copy = {...prev};
+          copy[chatId] = [];
+          return copy;
+        });
+      };
 
       // route parsing
       const route = (hash || '#/').replace(/^#/, '');
       const parts = route.split('/').filter(Boolean);
-      let page = 'home', param = null;
+      let page = 'home', param = null, usNumber = null, archiveId = null;
       if(parts.length>0){
-        if(parts[0]==='client'){ page='client'; param = parts[1]; }
-        if(parts[0]==='chat'){ page='chat'; param = parts[1]; }
-        if(parts[0]==='qr'){ page='qr'; }
+        if(parts[0]==='service'){ page='service'; usNumber = parts[1]; }
+        if(parts[0]==='instructions'){ page='instructions'; usNumber = parts[1]; }
+        if(parts[0]==='chat'){ page='chat'; param = parts[1]; usNumber = parts[2]; }
+        if(parts[0]==='archive'){ page='archive'; }
+        if(parts[0]==='archive-view'){ page='archive-view'; archiveId = parts[1]; }
       }
 
       const sendMessage = (chatId, msg) => {
@@ -244,140 +702,312 @@
         sendMessage(chatId, {type:'image', url});
       };
 
+      const addToArchive = (chatData) => {
+        const archivedChat = {
+          ...chatData, 
+          id: uid('arch'), 
+          closedAt: Date.now(),
+          messages: [...chatData.messages]
+        };
+        setArchive(prev => [...prev, archivedChat]);
+        return archivedChat;
+      };
+
       return e('div',{className:'app'},
+        e(BalanceHeader, {balance}),
         e(Header, {theme, setTheme, navigate}),
         e('div', {className:'page'},
-          page==='home' && e(HomePage, {clients, navigate}),
-          page==='client' && e(ClientPage, {clientId:param, clients, navigate}),
+          page==='home' && e(HomePage, {navigate, addPoints}),
+          page==='service' && e(ServicePage, {usNumber, navigate, sendMessage, addPoints}),
+          page==='instructions' && e(InstructionsPage, {usNumber, navigate}),
           page==='chat' && e(ChatPage, {
             chatId: param,
+            usNumber: usNumber,
             chats:chats[param] || [],
             onSend: (m)=> sendMessage(param, m),
             onAttach: (file)=> attachFileToChat(param, file),
             onImage: (file)=> pushImageFromCapture(param, file),
+            onArchive: addToArchive,
+            onClearChat: () => clearChat(param),
             navigate
           }),
-          page==='qr' && e(QRScanner, {onResult: (r)=> {
-            sendMessage('sppous', {type:'system', text:'QR: '+r});
-            sendMessage('curus', {type:'system', text:'QR: '+r});
-            alert('QR result: ' + r);
-            navigate('#/');
-          }, navigate})
+          page==='archive' && e(ArchivePage, {archive, navigate}),
+          page==='archive-view' && e(ArchiveViewPage, {archive, archiveId, navigate})
         ),
         e('div',{className:'bottom-nav'},
-          e('button',{className:'btn ghost', onClick:()=>navigate('#/')}, 'Главный'),
-          e('button',{className:'btn ghost', onClick:()=>navigate('#/chat/sppous')}, 'Чат СППОУС'),
-          e('button',{className:'btn ghost', onClick:()=>navigate('#/chat/curus')}, 'Чат ЦУРУС'),
-          e('button',{className:'btn ghost', onClick:()=>navigate('#/qr')}, 'Сканер QR')
+          e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/')}, 
+            e('i',{className:'tile-icon', 'data-lucide':'home'}), 'Главная'),
+          e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/archive')}, 
+            e('i',{className:'tile-icon', 'data-lucide':'archive'}), 'Архив')
         )
+      );
+    }
+
+    function BalanceHeader({balance}) {
+      return e('div', {className: 'balance-header'},
+        e('div', {className: 'balance-amount'}, `${balance} Баллов`),
+        e('div', {className: 'balance-label'}, 'Ваш баланс')
       );
     }
 
     function Header({theme,setTheme,navigate}){
       return e('header',{className:'app-header'},
         e('div',{className:'brand'},
-          e('div',{className:'logo'}, 'С'),
-          e('div',null, e('h1',null,'СВЯЗЬ'), e('div',{style:{fontSize:12,color:'var(--muted)'}}, 'offline demo'))
+          e('div',{className:'logo'}, 'И'),
+          e('div',null, e('h1',null,'Инкассатор — техподдержка'))
         ),
         e('div',{className:'controls'},
-          e('button',{className:'btn sm', onClick:()=> { setTheme(t => t==='light' ? 'dark' : 'light'); }}, theme==='light' ? '🌙 Тёмная' : '☀️ Светлая'),
-          e('button',{className:'btn sm', onClick:()=> navigate('#/qr')}, 'QR'),
-          e('button',{className:'btn sm', onClick:()=> navigate('#/chat/sppous')}, 'Чат СППОУС')
+          e('button',{className:'btn btn-sm btn-neutral', onClick:()=> { 
+            setTheme(t => t === 'light' ? 'dark' : 'light'); 
+          }}, 
+            theme==='light' 
+              ? e('i',{className:'tile-icon', 'data-lucide':'moon'})
+              : e('i',{className:'tile-icon', 'data-lucide':'sun'}),
+            theme==='light' ? 'Тёмная' : 'Светлая'
+          )
         )
       );
     }
 
-    function HomePage({clients,navigate}){
+    function HomePage({navigate, addPoints}){
+      const [usNumber, setUsNumber] = useState('');
+      const [error, setError] = useState('');
+
+      const validateUS = (number) => {
+        const num = parseInt(number);
+        if (!number) return 'Введите номер УС';
+        if (isNaN(num)) return 'Только числа разрешены';
+        if (num < 1 || num > 4) return 'Введите корректный номер УС (1-4)';
+        return '';
+      };
+
+      const handleUSSubmit = () => {
+        const validationError = validateUS(usNumber);
+        if (validationError) {
+          setError(validationError);
+          return;
+        }
+        setError('');
+        navigate(`#/service/${usNumber}`);
+      };
+
+      const handleInputChange = (value) => {
+        const numbersOnly = value.replace(/[^\d]/g, '');
+        setUsNumber(numbersOnly);
+        if (numbersOnly) {
+          setError(validateUS(numbersOnly));
+        } else {
+          setError('');
+        }
+      };
+
+      const showQRModal = () => {
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>QR-код</h3>
+            <p>В настоящий момент функция дорабатывается</p>
+            <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Закрыть</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      };
+
       return e('div',null,
-        e('div',{className:'clients-grid'},
-          clients.map(c => (
-            e('div',{key:c.id,className:'client-card', onClick:()=> navigate('#/client/'+c.id)},
-              e('img',{src:c.logo, alt:c.name, onError:(ev)=>{ ev.target.src='https://via.placeholder.com/56x56/666666/ffffff?text=?'} }),
-              e('div',{className:'name'}, c.name)
-            )
-          ))
-        ),
-        e('div',{className:'actions-row'},
-          e('button',{className:'btn', onClick:()=> navigate('#/chat/sppous')}, 'Чат поддержки СППОУС'),
-          e('button',{className:'btn', onClick:()=> navigate('#/chat/curus')}, 'Чат поддержки ЦУРУС'),
-          e('button',{className:'btn ghost', onClick:()=> navigate('#/qr') }, 'Сканер QR'),
-          e('button',{className:'btn ghost', onClick:()=> alert('Открыть локальные памятки (будет в версии с файлами)')}, 'Памятки (локально)')
+        e('div',{className:'main-actions'},
+          e('button',{className:'tile-btn qr', onClick:showQRModal},
+            e('i',{className:'tile-icon', 'data-lucide':'qrcode'}),
+            e('span',null, 'Сканировать QR-код')
+          ),
+          
+          e('div',{className:'input-group'},
+            e('label',{className:'input-label'}, 'Номер УС (1-4)'),
+            e('input',{
+              className: `us-input ${error ? 'error' : ''}`,
+              type: 'text',
+              placeholder: 'Введите номер УС...',
+              value: usNumber,
+              onChange: (e) => handleInputChange(e.target.value),
+              onKeyDown: (e) => { if(e.key === 'Enter') handleUSSubmit(); }
+            }),
+            error && e('div',{className:'error-text'}, error)
+          ),
+          
+          e('button',{className:'tile-btn primary', onClick:handleUSSubmit},
+            e('i',{className:'tile-icon', 'data-lucide':'play'}),
+            e('span',null, 'Начать обслуживание')
+          ),
+          
+          e('button',{className:'tile-btn archive', onClick:()=> navigate('#/archive')},
+            e('i',{className:'tile-icon', 'data-lucide':'archive'}),
+            e('span',null, 'Архив обращений')
+          )
         )
       );
     }
 
-    function ClientPage({clientId, clients, navigate}){
-      const client = clients.find(c=>c.id===clientId) || {name:'Клиент', logo:'https://via.placeholder.com/56x56/666666/ffffff?text=?'};
+    function ServicePage({usNumber, navigate, sendMessage, addPoints}){
+      const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+
+      const handleLoadRequest = (type) => {
+        const chatId = 'client';
+        const messageText = type === 'load' 
+          ? `Запрос на статус загрузки УС №${usNumber} (${client.name})`
+          : `Запрос на выгрузку УС №${usNumber} (${client.name})`;
+        
+        sendMessage(chatId, {type: 'text', text: messageText});
+        navigate(`#/chat/${chatId}/${usNumber}`);
+        
+        setTimeout(() => {
+          if (type === 'load') {
+            const success = Math.random() > 0.5;
+            const responseText = success 
+              ? 'Выгрузка осуществлена успешно' 
+              : 'Ошибка выгрузки!!! Обратитесь в поддержку';
+            sendMessage(chatId, {type: 'text', text: responseText});
+            
+            if (success) {
+              setTimeout(() => {
+                const modal = document.createElement('div');
+                modal.innerHTML = `
+                  <div class="overlay"></div>
+                  <div class="phone-modal success-modal">
+                    <h3>🎉 Поздравляем!</h3>
+                    <p>Вам начислено 100 Баллов</p>
+                    <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Отлично!</button>
+                  </div>
+                `;
+                document.body.appendChild(modal);
+                addPoints(100);
+              }, 500);
+            }
+          } else {
+            sendMessage(chatId, {type: 'text', text: 'Заявка принята'});
+          }
+        }, type === 'load' ? 1000 : 5000);
+      };
+
+      const handleEmergency = () => {
+        const chatId = 'sppous';
+        sendMessage(chatId, {type: 'text', text: `Ожидание подключение оператора СППОУС и ТП КЛИЕНТА по обращению по УС №${usNumber} клиента ${client.name}`});
+        navigate(`#/chat/${chatId}/${usNumber}`);
+      };
+
+      const handleExtraTime = () => {
+        const chatId = 'sppous';
+        sendMessage(chatId, {type: 'text', text: `Ожидание согласования доп. времени по УС №${usNumber} клиента ${client.name}`});
+        navigate(`#/chat/${chatId}/${usNumber}`);
+        
+        setTimeout(() => {
+          const approved = Math.random() > 0.5;
+          const responseText = approved 
+            ? 'Время согласовано' 
+            : 'Время не согласовано';
+          sendMessage(chatId, {type: 'text', text: responseText});
+        }, 5000);
+      };
+
+      const handleNoAccess = () => {
+        const chatId = 'client';
+        sendMessage(chatId, {type: 'text', text: `Отсутствие доступа к УС №${usNumber} клиента ${client.name}`});
+        navigate(`#/chat/${chatId}/${usNumber}`);
+        
+        setTimeout(() => {
+          sendMessage(chatId, {type: 'text', text: 'Информация принята'});
+        }, 1000);
+      };
+
+      const handlePhoneCall = () => {
+        const phoneNumber = '+74951234567'; // Замените на нужный номер
+        window.open(`tel:${phoneNumber}`, '_self');
+      };
+
+      return e('div',null,
+        e('div',{className:'service-header'},
+          e('div',{className:'client-info'},
+            e('div',{className:'client-logo', style:{background:client.color}}, client.logo),
+            e('h2',null, `УС №${usNumber}`)
+          ),
+          e('p',{style:{opacity:0.8,margin:0}}, `Клиент: ${client.name}`)
+        ),
+        
+        e('div',{className:'service-actions'},
+          e('button',{className:'service-btn', onClick:()=> navigate(`#/instructions/${usNumber}`)},
+            e('i',{className:'tile-icon', 'data-lucide':'file-text'}), 
+            e('span',null, 'Инструкции')
+          ),
+          e('button',{className:'service-btn', onClick:()=> handleLoadRequest('load')},
+            e('i',{className:'tile-icon', 'data-lucide':'download'}), 
+            e('span',null, 'Загрузка')
+          ),
+          e('button',{className:'service-btn', onClick:()=> handleLoadRequest('unload')},
+            e('i',{className:'tile-icon', 'data-lucide':'upload'}), 
+            e('span',null, 'Выгрузка')
+          ),
+          e('button',{className:'service-btn', onClick:handleNoAccess},
+            e('i',{className:'tile-icon', 'data-lucide':'lock'}), 
+            e('span',null, 'Отсутствие доступа')
+          ),
+          e('button',{className:'service-btn', onClick:handlePhoneCall},
+            e('i',{className:'tile-icon', 'data-lucide':'phone'}), 
+            e('span',null, 'Позвонить')
+          ),
+          e('button',{className:'service-btn emergency', onClick:handleEmergency},
+            e('i',{className:'tile-icon', 'data-lucide':'alert-triangle'}), 
+            e('span',null, 'ФОРС-МАЖОР')
+          ),
+          e('button',{className:'service-btn', onClick:handleExtraTime},
+            e('i',{className:'tile-icon', 'data-lucide':'clock'}), 
+            e('span',null, 'Доп. время')
+          )
+        )
+      );
+    }
+
+    function InstructionsPage({usNumber, navigate}){
+      const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+      
       return e('div',null,
         e('div',{className:'instr-header'},
-          e('button',{className:'back', onClick:()=> navigate('#/')}, '← Назад'),
-          e('div',{className:'search'}, e('input',{placeholder:'Поиск в памятке...'})),
-          e('div',null, e('button',{className:'btn sm', onClick:()=> alert('Открыть PDF (заглушка)')}, 'Открыть PDF'))
+          e('button',{className:'back', onClick:()=> navigate(`#/service/${usNumber}`)},
+            e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
+            'Назад'
+          ),
+          e('h2',null, `Инструкции для УС №${usNumber}`)
         ),
         e('div',{className:'placeholder'},
-          e('img',{src:'./assets/Кот.jpg', alt:'PDF'}),
-          e('p',null, 'PDF документ — в настоящий момент памятка разрабатывается, возвращайтесь позже...')
+          e('img',{src:'assets/sbercat.png', onError:(e)=>{e.target.src='assets/default_placeholder.png'}}),
+          e('p',null, `PDF документ с инструкциями для ${client.name} — в настоящий момент памятка разрабатывается, возвращайтесь позже...`)
         )
       );
     }
-    function showCatRating() {
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); display: flex; align-items: center;
-    justify-content: center; z-index: 1000;
-  `;
-  
-  modal.innerHTML = `
-    <div style="
-      background: var(--card); padding: 20px; border-radius: 16px;
-      text-align: center; max-width: 300px; width: 90%;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    ">
-      <h3 style="margin: 0 0 15px 0; color: var(--text);">Оцените нас!</h3>
-      <img src="assets/cat2.png" 
-           style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 10px 0;"
-           onerror="this.style.display='none'">
-      <p style="color: var(--muted); margin: 10px 0 20px 0;">Как вам помощь техподдержки?</p>
-      <div style="display: flex; gap: 5px; justify-content: center; margin: 15px 0;">
-        ${[1,2,3,4,5].map(i => 
-          `<button class="btn sm" onclick="closeModal(${i})" style="font-size: 18px;">⭐</button>`
-        ).join('')}
-      </div>
-      <button class="btn ghost" onclick="this.closest('div[style]').parentElement.remove()">Позже</button>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  // Функция для закрытия с оценкой
-  window.closeModal = function(rating) {
-    alert(`Спасибо за оценку: ${rating} звезд! 🐱`);
-    modal.remove();
-  };
-  
-  // Закрытие по клику на оверлей
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-}
-    function ChatPage({chatId, chats, onSend, onAttach, onImage, navigate}){
+
+    function ChatPage({chatId, usNumber, chats, onSend, onAttach, onImage, onArchive, onClearChat, navigate}){
       const [text, setText] = useState('');
+      const [isArchived, setIsArchived] = useState(false);
+      const messagesRef = useRef(null);
       const fileRef = useRef(null);
       const cameraRef = useRef(null);
-      const messagesRef = useRef(null);
+      const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
 
       useEffect(()=> {
         if(messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
       }, [chats]);
-
+      useEffect(() => {
+  // Переинициализация иконок Lucide при каждом обновлении компонента
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+});
       const handleSend = ()=> {
-        if(!text.trim()) return;
+        if(!text.trim() || isArchived) return;
         onSend({type:'text', text});
         setText('');
       };
 
       const handleAttach = (e) => {
+        if (isArchived) return;
         const f = e.target.files && e.target.files[0];
         if(!f) return;
         onAttach(f);
@@ -385,34 +1015,91 @@
       };
 
       const handleCamera = (e) => {
+        if (isArchived) return;
         const f = e.target.files && e.target.files[0];
         if(!f) return;
         onImage(f);
         e.target.value = '';
       };
 
-      const doCall = () => {
-        const tel = '+78005553535';
-        window.open('tel:' + tel, '_self');
-        showPhoneModal(tel);
+      const handlePhoneCall = () => {
+        const phoneNumber = '+74951234567'; // Замените на нужный номер
+        window.open(`tel:${phoneNumber}`, '_self');
       };
 
-      function showPhoneModal(tel){
+      const showRatingModal = () => {
         const modal = document.createElement('div');
-        modal.innerHTML = '<div class="overlay"></div><div class="phone-modal"><h3>Звонок техподдержке</h3><p>Номер: '+tel+'</p><div style="display:flex;gap:8px;margin-top:12px"><button id="endBtn" class="btn">Завершить</button></div></div>';
-        document.body.appendChild(modal);
-        modal.querySelector('#endBtn').addEventListener('click', ()=> {
-          document.body.removeChild(modal);
-        });
-      }
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>Оцените обслуживание</h3>
+            <div class="rating-stars">
+              <span class="star" onclick="setRating(1)">⭐</span>
+              <span class="star" onclick="setRating(2)">⭐</span>
+              <span class="star" onclick="setRating(3)">⭐</span>
+              <span class="star" onclick="setRating(4)">⭐</span>
+              <span class="star" onclick="setRating(5)">⭐</span>
+            </div>
+            <button class="btn btn-primary" onclick="submitRating()" style="margin-top:15px;">Отправить оценку</button>
+          </div>
+        `;
+        
+        window.setRating = (stars) => {
+          const starElements = modal.querySelectorAll('.star');
+          starElements.forEach((star, index) => {
+            star.classList.toggle('active', index < stars);
+          });
+          window.currentRating = stars;
+        };
 
-      return e('div',null,
+        window.submitRating = () => {
+          const finalRating = window.currentRating || 0;
+          if (finalRating > 0) {
+            handleCloseChat(finalRating);
+          }
+          modal.remove();
+        };
+
+        document.body.appendChild(modal);
+      };
+
+      const handleCloseChat = (userRating = 0) => {
+        const archivedChat = onArchive({
+          usNumber,
+          client: client.name,
+          chatId,
+          messages: chats,
+          rating: userRating,
+          createdAt: Date.now()
+        });
+        
+        onClearChat();
+        setIsArchived(true);
+        
+        if (userRating > 0) {
+          setTimeout(() => {
+            navigate(`#/service/${usNumber}`);
+          }, 1000);
+        } else {
+          navigate(`#/service/${usNumber}`);
+        }
+      };
+
+      const getChatTitle = () => {
+        return chatId === 'client' ? `ТП Клиента (${client.name})` : 'СППОУС';
+      };
+
+      return e('div',{className: isArchived ? 'archive-chat' : ''},
         e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
-          e('div',null, e('button',{className:'back', onClick:()=> navigate('#/')}, '← Назад'), e('span',{style:{marginLeft:12,fontWeight:700}}, chatId.toUpperCase())),
-          e('div',null,
-            e('button',{className:'btn sm', onClick:doCall}, '📞 Позвонить'),
-            e('button',{className:'btn sm', onClick:()=> showCatRating()}, '⭐ Оценить')
-          )
+          e('div',{style:{display:'flex',alignItems:'center',gap:'8px'}}, 
+            e('button',{className:'back', onClick:()=> navigate(`#/service/${usNumber}`)},
+              e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
+              'Назад'
+            ),
+            e('span',{style:{fontWeight:700}}, getChatTitle())
+          ),
+          !isArchived && e('button',{className:'btn btn-sm btn-primary', onClick:showRatingModal}, 
+            e('i',{className:'tile-icon', 'data-lucide':'check-circle'}), 'Завершить чат')
         ),
         e('div',{className:'chat-wrap'},
           e('div',{ref:messagesRef,className:'messages'},
@@ -423,70 +1110,146 @@
                 e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
                 e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
               );
-              if(m.type==='system') return e('div',{key:m.id, style:{alignSelf:'center',color:'var(--muted)',fontSize:13}}, m.text);
               return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
             })
           ),
           e('div',{className:'chat-input'},
-            e('input',{type:'text', placeholder:'Напишите сообщение...', value:text, onChange:(e)=>setText(e.target.value), onKeyDown:(ev)=>{ if(ev.key==='Enter') handleSend(); }}),
-            e('label',{className:'icon-btn', title:'Прикрепить файл'},
-              e('input',{type:'file', style:{display:'none'}, ref:fileRef, onChange:handleAttach}),
-              '📎'
-            ),
-            e('label',{className:'icon-btn', title:'Открыть камеру'},
-              e('input',{type:'file', accept:'image/*', capture:'environment', style:{display:'none'}, ref:cameraRef, onChange:handleCamera}),
-              '📷'
-            ),
-            e('button',{className:'btn sm', onClick:handleSend}, 'Отправить')
+            e('input',{
+              type:'text', 
+              placeholder: isArchived ? 'Чат завершен' : 'Напишите сообщение...', 
+              value:text, 
+              onChange:(e)=>setText(e.target.value), 
+              onKeyDown:(ev)=>{ if(ev.key==='Enter') handleSend(); },
+              disabled: isArchived
+            }),ы
+            e('div',{className:'chat-actions'},
+              e('label',{className:'icon-btn', title:'Прикрепить файл'},
+                e('input',{type:'file', style:{display:'none'}, ref:fileRef, onChange:handleAttach}),
+                e('i',{className:'tile-icon', 'data-lucide':'paperclip', style:{width:'18px',height:'18px'}})
+              ),
+              e('label',{className:'icon-btn', title:'Открыть камеру'},
+                e('input',{type:'file', accept:'image/*', capture:'environment', style:{display:'none'}, ref:cameraRef, onChange:handleCamera}),
+                e('i',{className:'tile-icon', 'data-lucide':'camera', style:{width:'18px',height:'18px'}})
+              ),
+              e('button',{className:'icon-btn', title:'Позвонить', onClick:handlePhoneCall},
+                e('i',{className:'tile-icon', 'data-lucide':'phone', style:{width:'18px',height:'18px'}})
+              ),
+              e('button',{className:'btn btn-sm btn-primary', onClick:handleSend}, 
+                e('i',{className:'tile-icon', 'data-lucide':'send', style:{width:'16px',height:'16px'}}))
+            )
           )
         )
       );
     }
 
-    function QRScanner({onResult, navigate}){
-      const videoRef = useRef(null);
-      const [hasCamera, setHasCamera] = useState(false);
-
-      const handleFile = (ev)=>{
-        const file = ev.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e)=>{
-          const img = new Image();
-          img.onload = ()=>{
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img,0,0);
-            const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-            const code = jsQR(imageData.data, canvas.width, canvas.height);
-            if(code) onResult(code.data);
-            else alert("QR не найден в изображении");
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      };
-
+    function ArchivePage({archive, navigate}){
       return e('div',null,
-        e('div',{style:{marginBottom:12}},
-          e('button',{className:'back', onClick:()=> navigate('#/')},'← Назад'),
-          e('span',{style:{marginLeft:12,fontWeight:700}},'Сканер QR')
+        e('div',{className:'instr-header'},
+          e('button',{className:'back', onClick:()=> navigate('#/')},
+            e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
+            'Назад'
+          ),
+          e('h2',null, 'Архив обращений')
         ),
         e('div',null,
-          e('p', null, 'Загрузите изображение с QR-кодом:'),
-          e('input',{type:'file', accept:'image/*', onChange:handleFile}),
-          e('div',{style:{marginTop:'20px'}},
-            e('button',{className:'btn ghost', onClick:()=> alert('Функция камеры будет доступна при HTTPS соединении')}, 'Использовать камеру')
+          archive.length === 0 
+            ? e('div',{style:{textAlign:'center',opacity:0.8,padding:'40px'}}, 
+                e('i',{className:'tile-icon', 'data-lucide':'inbox', style:{fontSize:'48px',marginBottom:'16px',display:'block',opacity:0.5}}),
+                'Архив пуст'
+              )
+            : archive.map(item => e('div',{
+                key:item.id,
+                className:'service-btn',
+                style:{marginBottom:'10px', cursor: 'pointer'},
+                onClick: () => navigate(`#/archive-view/${item.id}`)
+              }, 
+                e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px'}},
+                  e('i',{className:'tile-icon', 'data-lucide':item.chatId === 'client' ? 'message-circle' : 'headphones', style:{width:'16px',height:'16px'}}),
+                  e('div',{style:{fontWeight:'bold'}}, `УС №${item.usNumber} - ${item.client}`)
+                ),
+                e('div',{style:{fontSize:'12px',opacity:0.7}}, 
+                  `Закрыто: ${new Date(item.closedAt).toLocaleString()}`
+                ),
+                item.rating && e('div',{style:{fontSize:'12px',color:'#ffd700'}}, 
+                  `Оценка: ${'⭐'.repeat(item.rating)}`
+                )
+              ))
+        )
+      );
+    }
+
+    function ArchiveViewPage({archive, archiveId, navigate}){
+      const archivedChat = archive.find(item => item.id === archiveId);
+
+      if (!archivedChat) {
+        return e('div',null,
+          e('div',{className:'instr-header'},
+            e('button',{className:'back', onClick:()=> navigate('#/archive')},
+              e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
+              'Назад'
+            ),
+            e('h2',null, 'Обращение не найдено')
           )
+        );
+      }
+
+      return e('div',null,
+        e('div',{className:'instr-header'},
+          e('button',{className:'back', onClick:()=> navigate('#/archive')},
+            e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
+            'Назад'
+          ),
+          e('h2',null, `Архив: УС №${archivedChat.usNumber}`)
+        ),
+        e('div',{style:{marginBottom:'16px', background:'var(--glass-bg)', padding:'16px', borderRadius:'var(--radius)', border:'1px solid var(--glass-border)'}},
+          e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
+            e('i',{className:'tile-icon', 'data-lucide':'building', style:{width:'16px',height:'16px'}}),
+            e('div',{style:{opacity:0.8}}, `Клиент: ${archivedChat.client}`)
+          ),
+          e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
+            e('i',{className:'tile-icon', 'data-lucide':archivedChat.chatId === 'client' ? 'message-circle' : 'headphones', style:{width:'16px',height:'16px'}}),
+            e('div',{style:{opacity:0.8}}, `Чат: ${archivedChat.chatId === 'client' ? 'ТП Клиента' : 'СППОУС'}`)
+          ),
+          e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
+            e('i',{className:'tile-icon', 'data-lucide':'calendar', style:{width:'16px',height:'16px'}}),
+            e('div',{style:{opacity:0.8}}, `Закрыто: ${new Date(archivedChat.closedAt).toLocaleString()}`)
+          ),
+          archivedChat.rating && e('div',{style:{display:'flex', alignItems:'center', gap:'8px'}},
+            e('i',{className:'tile-icon', 'data-lucide':'star', style:{width:'16px',height:'16px',color:'#ffd700'}}),
+            e('div',{style:{color:'#ffd700'}}, `Оценка: ${'⭐'.repeat(archivedChat.rating)}`)
+          )
+        ),
+        e('div',{className:'archive-messages'},
+          (archivedChat.messages || []).map(m => {
+            if(m.type==='text') return e('div',{key:m.id,className:'bubble me'}, m.text, e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+            if(m.type==='image') return e('div',{key:m.id,className:'bubble me'}, e('img',{src:m.url, style:{maxWidth:220,borderRadius:8}}), e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+            if(m.type==='file') return e('div',{key:m.id,className:'bubble me'},
+              e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
+              e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
+            );
+            return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
+          })
         )
       );
     }
 
     // Рендеринг приложения
     ReactDOM.render(e(App), document.getElementById('root'));
+
+    // Инициализация Lucide Icons после рендеринга
+    setTimeout(() => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }, 100);
   })();
   </script>
+  
+  <!-- Video background -->
+  <video autoplay muted loop playsinline class="video-background">
+    <source src="assets/Dark.mp4" type="video/mp4">
+    Ваш браузер не поддерживает видео.
+  </video>
+  <div class="overlay-dark"></div>
 </body>
 </html>
