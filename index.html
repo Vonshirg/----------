@@ -1121,7 +1121,7 @@
               onChange:(e)=>setText(e.target.value), 
               onKeyDown:(ev)=>{ if(ev.key==='Enter') handleSend(); },
               disabled: isArchived
-            }),ы
+            }),
             e('div',{className:'chat-actions'},
               e('label',{className:'icon-btn', title:'Прикрепить файл'},
                 e('input',{type:'file', style:{display:'none'}, ref:fileRef, onChange:handleAttach}),
