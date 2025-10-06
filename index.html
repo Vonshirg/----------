@@ -11,7 +11,7 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <style>
     /* Ваши стили остаются без изменений */
     /* ===========================
@@ -801,18 +801,100 @@
         }
       };
 
-      const showQRModal = () => {
-        const modal = document.createElement('div');
-        modal.innerHTML = `
-          <div class="overlay"></div>
-          <div class="phone-modal">
-            <h3>QR-код</h3>
-            <p>В настоящий момент функция дорабатывается</p>
-            <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Закрыть</button>
-          </div>
-        `;
-        document.body.appendChild(modal);
-      };
+const showQRModal = () => {
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <div class="overlay"></div>
+    <div class="phone-modal" style="max-width: 400px;">
+      <h3>Сканирование QR-кода</h3>
+      <div id="qr-reader" style="width: 100%; margin: 15px 0;"></div>
+      <div id="qr-result" style="margin: 10px 0; min-height: 20px;"></div>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn btn-neutral" id="stop-scan">Остановить</button>
+        <button class="btn btn-primary" id="close-qr">Закрыть</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Инициализация сканера
+  let html5QrcodeScanner = null;
+  const qrReader = document.getElementById('qr-reader');
+  const qrResult = document.getElementById('qr-result');
+  const stopButton = document.getElementById('stop-scan');
+  const closeButton = document.getElementById('close-qr');
+  
+  try {
+    html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", 
+      { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+      }, 
+      false
+    );
+    
+    html5QrcodeScanner.render(
+      (decodedText, decodedResult) => {
+        // Успешное сканирование
+        qrResult.innerHTML = `<div style="color: var(--accent-green); text-align: center;">
+          <strong>Найден УС:</strong> ${decodedText}
+        </div>`;
+        
+        // Автоматическое заполнение номера УС
+        const usNumberMatch = decodedText.match(/\d+/);
+        if (usNumberMatch) {
+          const scannedUsNumber = usNumberMatch[0];
+          if (scannedUsNumber >= 1 && scannedUsNumber <= 4) {
+            setUsNumber(scannedUsNumber);
+            setError('');
+            
+            // Автоматический переход через 2 секунды
+            setTimeout(() => {
+              modal.remove();
+              if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+              }
+              navigate(`#/service/${scannedUsNumber}`);
+            }, 2000);
+          }
+        }
+      },
+      (errorMessage) => {
+        // Игнорируем ошибки сканирования (ожидание кода)
+      }
+    );
+  } catch (error) {
+    qrResult.innerHTML = `<div style="color: var(--accent-red); text-align: center;">
+      Ошибка инициализации камеры: ${error.message}
+    </div>`;
+  }
+  
+  // Обработчики кнопок
+  stopButton.onclick = () => {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear();
+      qrResult.innerHTML = '<div style="color: var(--accent-orange); text-align: center;">Сканирование остановлено</div>';
+    }
+  };
+  
+  closeButton.onclick = () => {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear();
+    }
+    modal.remove();
+  };
+  
+  // Закрытие по клику на overlay
+  modal.querySelector('.overlay').onclick = () => {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.clear();
+    }
+    modal.remove();
+  };
+};
 
       return e('div',null,
         e('div',{className:'main-actions'},
