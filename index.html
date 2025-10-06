@@ -11,7 +11,7 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@latest/minified/html5-qrcode.min.js"></script>
   <style>
     /* Ваши стили остаются без изменений */
     /* ===========================
@@ -818,7 +818,6 @@ const showQRModal = () => {
   
   document.body.appendChild(modal);
   
-  // Инициализация сканера
   let html5QrcodeScanner = null;
   const qrReader = document.getElementById('qr-reader');
   const qrResult = document.getElementById('qr-result');
@@ -838,32 +837,36 @@ const showQRModal = () => {
     
     html5QrcodeScanner.render(
       (decodedText, decodedResult) => {
-        // Успешное сканирование
-        qrResult.innerHTML = `<div style="color: var(--accent-green); text-align: center;">
-          <strong>Найден УС:</strong> ${decodedText}
-        </div>`;
-        
-        // Автоматическое заполнение номера УС
-        const usNumberMatch = decodedText.match(/\d+/);
-        if (usNumberMatch) {
-          const scannedUsNumber = usNumberMatch[0];
-          if (scannedUsNumber >= 1 && scannedUsNumber <= 4) {
-            setUsNumber(scannedUsNumber);
-            setError('');
+        // Проверяем, является ли ссылкой на наше приложение
+        if (decodedText.includes('vonshirg.github.io') && decodedText.includes('/#/service/')) {
+          qrResult.innerHTML = `<div style="color: var(--accent-green); text-align: center;">
+            <strong>Найдена ссылка:</strong> ${decodedText}
+          </div>`;
+          
+          // Извлекаем номер УС из ссылки
+          const usNumberMatch = decodedText.match(/service\/(\d+)/);
+          if (usNumberMatch) {
+            const scannedUsNumber = usNumberMatch[1];
             
-            // Автоматический переход через 2 секунды
+            // Останавливаем сканер
+            if (html5QrcodeScanner) {
+              html5QrcodeScanner.clear();
+            }
+            
+            // Переход по ссылке внутри приложения
             setTimeout(() => {
               modal.remove();
-              if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear();
-              }
               navigate(`#/service/${scannedUsNumber}`);
-            }, 2000);
+            }, 1000);
           }
+        } else {
+          qrResult.innerHTML = `<div style="color: var(--accent-red); text-align: center;">
+            Неверный QR-код. Ожидается ссылка на УС.
+          </div>`;
         }
       },
       (errorMessage) => {
-        // Игнорируем ошибки сканирования (ожидание кода)
+        // Игнорируем ошибки сканирования
       }
     );
   } catch (error) {
@@ -872,7 +875,6 @@ const showQRModal = () => {
     </div>`;
   }
   
-  // Обработчики кнопок
   stopButton.onclick = () => {
     if (html5QrcodeScanner) {
       html5QrcodeScanner.clear();
@@ -887,7 +889,6 @@ const showQRModal = () => {
     modal.remove();
   };
   
-  // Закрытие по клику на overlay
   modal.querySelector('.overlay').onclick = () => {
     if (html5QrcodeScanner) {
       html5QrcodeScanner.clear();
