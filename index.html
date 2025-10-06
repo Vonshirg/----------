@@ -11,7 +11,7 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@latest/minified/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     /* Ваши стили остаются без изменений */
     /* ===========================
@@ -775,7 +775,7 @@
 
       const validateUS = (number) => {
         const num = parseInt(number);
-        if (!number) return 'Введите номер УС';
+        if (!number) return 'Введите номер УС от 1 до 4';
         if (isNaN(num)) return 'Только числа разрешены';
         if (num < 1 || num > 4) return 'Введите корректный номер УС (1-4)';
         return '';
