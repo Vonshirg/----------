@@ -1252,52 +1252,54 @@ const startAutoChatSequence = (chatId, sequenceType, customParams = {}) => {
   navigate(`#/chat/${chatId}/${usNumber}`);
 
   setTimeout(() => {
-   if (sequenceType === 'emergency' || sequenceType === 'extraTime') {
-  const operatorName = client.isSber ? "Надежда" : "Игорь";
-  const operatorService = client.isSber ? "ЦУРУС" : "СППОУС";
+    if (sequenceType === 'emergency' || sequenceType === 'extraTime') {
+      const operatorName = client.isSber ? "Надежда" : "Игорь";
+      const operatorService = client.isSber ? "ЦУРУС" : "СППОУС";
 
-  sendMessage(chatId, { type: 'text', text: `Здравствуйте! Я оператор ${operatorService}, меня зовут ${operatorName}. Какой у Вас вопрос?` });
-  sendMessage(chatId, { type: 'text', text: "Звонок продолжается..." });
+      sendMessage(chatId, { type: 'text', text: `Здравствуйте! Я оператор ${operatorService}, меня зовут ${operatorName}. Какой у Вас вопрос?` });
+      sendMessage(chatId, { type: 'text', text: "Идет звонок..." });
 
-  setTimeout(() => {
-    showQuestionSolvedModal(chatId, client.isSber ? 'curus' : 'sppous', false);
-  }, 3000);
-}
+      setTimeout(() => {
+        showQuestionSolvedModal(chatId, client.isSber ? 'curus' : 'sppous');
+      }, 3000);
+    }
 
     else if (sequenceType === 'load') {
-  const success = Math.random() > 0.5;
-  if (success) {
-    sendMessage(chatId, { type: 'text', text: "Загрузка осуществлена успешно" });
-    setTimeout(() => {
-      const modal = document.createElement('div');
-      modal.innerHTML = `
-        <div class="overlay"></div>
-        <div class="phone-modal success-modal">
-          <h3>🎉 Поздравляем!</h3>
-          <p>Вам начислено 100 Баллов</p>
-          <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Отлично!</button>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      addPoints(100);
-      setTimeout(() => completeChatWithRating(chatId), 2000);
-    }, 1500);
-  } else {
-    sendMessage(chatId, { type: 'text', text: "Ошибка загрузки! Обратитесь в поддержку." });
-    setTimeout(() => {
-      sendMessage(chatId, { type: 'text', text: "Идет подключение оператора ТП клиента..." });
-      setTimeout(() => {
-        if (client.isSber) {
-          sendMessage(chatId, { type: 'text', text: "Здравствуйте! Я оператор ЦУРУС, меня зовут Надежда. Какой у Вас вопрос?" });
-        } else {
-          sendMessage(chatId, { type: 'text', text: "Здравствуйте, меня зовут Ольга. Я оператор технической поддержки клиента. Какой у Вас вопрос?" });
-        }
-        // Передаем skipTpConnection = true, так как Ольга уже подключилась
-        setTimeout(() => showQuestionSolvedModal(chatId, 'client', false, true), 3000);
-      }, 2000);
-    }, 2000);
-  }
-}
+      const success = Math.random() > 0.5;
+      if (success) {
+        sendMessage(chatId, { type: 'text', text: "Загрузка осуществлена успешно" });
+
+        setTimeout(() => {
+          const modal = document.createElement('div');
+          modal.innerHTML = `
+            <div class="overlay"></div>
+            <div class="phone-modal success-modal">
+              <h3>🎉 Поздравляем!</h3>
+              <p>Вам начислено 100 Баллов</p>
+              <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Отлично!</button>
+            </div>
+          `;
+          document.body.appendChild(modal);
+          addPoints(100);
+          setTimeout(() => completeChatWithRating(chatId), 2000);
+        }, 1500);
+      } else {
+        sendMessage(chatId, { type: 'text', text: "Ошибка загрузки! Обратитесь в поддержку." });
+
+        setTimeout(() => {
+          sendMessage(chatId, { type: 'text', text: "Идет подключение оператора ТП клиента..." });
+
+          setTimeout(() => {
+            if (client.isSber) {
+              sendMessage(chatId, { type: 'text', text: "Здравствуйте! Я оператор ЦУРУС, меня зовут Надежда. Какой у Вас вопрос?" });
+            } else {
+              sendMessage(chatId, { type: 'text', text: "Здравствуйте, меня зовут Ольга. Я оператор технической поддержки клиента. Какой у Вас вопрос?" });
+            }
+            setTimeout(() => showQuestionSolvedModal(chatId, 'client', false, true), 3000);
+          }, 2000);
+        }, 2000);
+      }
+    }
 
     else if (sequenceType === 'unload') {
       const success = Math.random() > 0.5;
@@ -1305,12 +1307,15 @@ const startAutoChatSequence = (chatId, sequenceType, customParams = {}) => {
         type: 'text',
         text: success ? "Выгрузка согласована" : "Выгрузка не согласована, следуйте далее по маршруту"
       });
-      setTimeout(() => showRatingModal(chatId), 2000);
+      setTimeout(() => completeChatWithRating(chatId), 2000);
     }
 
     else if (sequenceType === 'noAccess') {
       sendMessage(chatId, { type: 'text', text: "Информация принята" });
-      setTimeout(() => showRatingModal(chatId), 2000);
+      // Автоматическое окно оценки через 2 секунды
+      setTimeout(() => {
+        completeChatWithRating(chatId);
+      }, 2000);
     }
   }, 2000);
 };
