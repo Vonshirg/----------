@@ -317,6 +317,16 @@
       grid-template-columns: 1fr;
       gap: 12px;
     }
+
+.service-actions .service-btn-instructions {
+  background: rgba(106, 27, 154, 0.25) !important;
+  border: 1px solid rgba(106, 27, 154, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(106, 27, 154, 0.3) !important;
+}
+
+.service-actions .service-btn-instructions:hover {
+  background: rgba(106, 27, 154, 0.35) !important;
+}
     .service-btn {
       position: relative;
       display: inline-flex;
@@ -340,6 +350,7 @@
       border: none;
       font-family: inherit;
     }
+
 
     .input-group {
       display: flex;
@@ -586,10 +597,59 @@
 
     /* small screens adjustments */
     @media (max-width: 560px) {
-      .brand h1 { font-size: 16px; }
-      .chat-wrap { height: 58vh; }
-      .btn, .tile-btn { padding: 14px 20px; }
-    }
+  .brand h1 { font-size: 16px; }
+  .chat-wrap { height: 58vh; }
+  .btn, .tile-btn { padding: 14px 20px; }
+  
+  /* Добавьте это */
+  .app {
+    padding: 12px;
+  }
+  
+  .service-btn {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 440px) {
+  .app {
+    padding: 8px;
+  }
+  
+  .service-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .balance-header {
+    padding: 16px;
+  }
+  
+  .balance-amount {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app {
+    padding: 6px;
+  }
+  
+  .service-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  .brand h1 {
+    font-size: 14px;
+  }
+  
+  .brand .logo {
+    width: 40px;
+    height: 40px;
+  }
+}
   </style>
 </head>
 <body>
@@ -609,12 +669,21 @@
 
     // Данные клиентов
     const CLIENTS_DATA = {
-      1: { name: 'Сбер', shortName: 'Сбер', logo: 'С', color: '#0b7a43' },
-      2: { name: 'Альфа Банк', shortName: 'Альфа', logo: 'А', color: '#ef3124' },
-      3: { name: 'Совкомбанк', shortName: 'Совком', logo: 'С', color: '#8cc054' },
-      4: { name: 'Т-Банк', shortName: 'Т-Банк', logo: 'Т', color: '#ff6b00' }
+      1: { name: 'Сбер', shortName: 'Сбер', logo: 'С', color: '#0b7a43', isSber: true },
+      2: { name: 'Альфа Банк', shortName: 'Альфа', logo: 'А', color: '#ef3124', isSber: false },
+      3: { name: 'Совкомбанк', shortName: 'Совком', logo: 'С', color: '#8cc054', isSber: false },
+      4: { name: 'Т-Банк', shortName: 'Т-Банк', logo: 'Т', color: '#ff6b00', isSber: false }
     };
-
+    function useLucideIcons() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  });
+}
     // --- Simple hash router ---
     function useHashRoute() {
       const [hash, setHash] = useState(location.hash || '#/');
@@ -629,12 +698,14 @@
 
     // --- App ---
     function App(){
+      useLucideIcons();
       const {hash, navigate} = useHashRoute();
       const [theme, setTheme] = useState(storage.get('theme','dark'));
       const [balance, setBalance] = useState(storage.get('balance', 0));
       const [chats, setChats] = useState(storage.get('chats', {
         'client': [],
-        'sppous': []
+        'sppous': [],
+        'curus': []
       }));
       const [archive, setArchive] = useState(storage.get('archive', []));
 
@@ -734,12 +805,12 @@
           page==='archive' && e(ArchivePage, {archive, navigate}),
           page==='archive-view' && e(ArchiveViewPage, {archive, archiveId, navigate})
         ),
-        e('div',{className:'bottom-nav'},
-          e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/')}, 
-            e('i',{className:'tile-icon', 'data-lucide':'home'}), 'Главная'),
-          e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/archive')}, 
-            e('i',{className:'tile-icon', 'data-lucide':'archive'}), 'Архив')
-        )
+        // e('div',{className:'bottom-nav'},
+        //   e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/')}, 
+        //     e('i',{className:'tile-icon', 'data-lucide':'home'}), 'Главная'),
+        //   e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/archive')}, 
+        //     e('i',{className:'tile-icon', 'data-lucide':'archive'}), 'Архив')
+        // )
       );
     }
 
@@ -775,9 +846,9 @@
 
       const validateUS = (number) => {
         const num = parseInt(number);
-        if (!number) return 'Введите номер УС от 1 до 4';
+        if (!number) return 'Введите номер УС(1-СБЕР, 2-АЛЬФА, 3-СОВКОМБАНК, 4-Т-БАНК)';
         if (isNaN(num)) return 'Только числа разрешены';
-        if (num < 1 || num > 4) return 'Введите корректный номер УС (1-4)';
+        if (num < 1 || num > 4) return 'Введите номер УС 1-4 (1-СБЕР, 2-АЛЬФА, 3-СОВКОМБАНК, 4-Т-БАНК)';
         return '';
       };
 
@@ -801,101 +872,128 @@
         }
       };
 
-const showQRModal = () => {
-  const modal = document.createElement('div');
-  modal.innerHTML = `
-    <div class="overlay"></div>
-    <div class="phone-modal" style="max-width: 400px;">
-      <h3>Сканирование QR-кода</h3>
-      <div id="qr-reader" style="width: 100%; margin: 15px 0;"></div>
-      <div id="qr-result" style="margin: 10px 0; min-height: 20px;"></div>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button class="btn btn-neutral" id="stop-scan">Остановить</button>
-        <button class="btn btn-primary" id="close-qr">Закрыть</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  let html5QrcodeScanner = null;
-  const qrReader = document.getElementById('qr-reader');
-  const qrResult = document.getElementById('qr-result');
-  const stopButton = document.getElementById('stop-scan');
-  const closeButton = document.getElementById('close-qr');
-  
-  try {
-    html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader", 
-      { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-      }, 
-      false
-    );
-    
-    html5QrcodeScanner.render(
-      (decodedText, decodedResult) => {
-        // Проверяем, является ли ссылкой на наше приложение
-        if (decodedText.includes('vonshirg.github.io') && decodedText.includes('/#/service/')) {
-          qrResult.innerHTML = `<div style="color: var(--accent-green); text-align: center;">
-            <strong>Найдена ссылка:</strong> ${decodedText}
-          </div>`;
+      const showQRModal = () => {
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal" style="max-width: 420px;">
+            <h3>📷 Сканирование QR-кода</h3>
+            <div style="text-align: center; margin-bottom: 15px;">
+              <p>Наведите камеру на QR-код УС для автоматического перехода</p>
+            </div>
+            <div id="qr-reader" style="width: 100%; margin: 15px 0;"></div>
+            <div id="qr-result" style="margin: 10px 0; min-height: 20px; text-align: center;"></div>
+            <div id="qr-status" style="margin: 10px 0; min-height: 20px; text-align: center; font-size: 14px; opacity: 0.8;"></div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+              <button class="btn btn-neutral" id="stop-scan">Остановить сканирование</button>
+              <button class="btn btn-primary" id="close-qr">Закрыть</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        let html5QrcodeScanner = null;
+        const qrReader = document.getElementById('qr-reader');
+        const qrResult = document.getElementById('qr-result');
+        const qrStatus = document.getElementById('qr-status');
+        const stopButton = document.getElementById('stop-scan');
+        const closeButton = document.getElementById('close-qr');
+        
+        qrStatus.innerHTML = '🔄 Запуск камеры...';
+        
+        try {
+          html5QrcodeScanner = new Html5QrcodeScanner(
+            "qr-reader", 
+            { 
+              fps: 10, 
+              qrbox: { width: 250, height: 250 },
+              supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+              formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+              showTorchButtonIfSupported: true,
+              showZoomSliderIfSupported: true,
+            }, 
+            false
+          );
           
-          // Извлекаем номер УС из ссылки
-          const usNumberMatch = decodedText.match(/service\/(\d+)/);
-          if (usNumberMatch) {
-            const scannedUsNumber = usNumberMatch[1];
-            
-            // Останавливаем сканер
-            if (html5QrcodeScanner) {
-              html5QrcodeScanner.clear();
+          html5QrcodeScanner.render(
+            (decodedText, decodedResult) => {
+              qrStatus.innerHTML = '✅ Код распознан!';
+              
+              if (decodedText.includes('vonshirg.github.io') && decodedText.includes('/#/service/')) {
+                qrResult.innerHTML = `<div style="color: var(--accent-green);">
+                  <strong>Найдена ссылка на УС:</strong><br>
+                  <small>${decodedText}</small>
+                </div>`;
+                
+                const usNumberMatch = decodedText.match(/service\/(\d+)/);
+                if (usNumberMatch) {
+                  const scannedUsNumber = usNumberMatch[1];
+                  
+                  qrStatus.innerHTML = `🔄 Переход к УС №${scannedUsNumber}...`;
+                  
+                  if (html5QrcodeScanner) {
+                    html5QrcodeScanner.clear();
+                  }
+                  
+                  setTimeout(() => {
+                    modal.remove();
+                    navigate(`#/service/${scannedUsNumber}`);
+                  }, 1500);
+                }
+              } else {
+                qrResult.innerHTML = `<div style="color: var(--accent-red);">
+                  ❌ Неверный QR-код<br>
+                  <small>Ожидается ссылка на устройство сбора</small>
+                </div>`;
+                
+                setTimeout(() => {
+                  qrResult.innerHTML = '';
+                  qrStatus.innerHTML = '📷 Продолжайте сканирование...';
+                }, 3000);
+              }
+            },
+            (errorMessage) => {
+              if (!errorMessage.includes('NotFoundException')) {
+                qrStatus.innerHTML = '📷 Наведите камеру на QR-код...';
+              }
             }
-            
-            // Переход по ссылке внутри приложения
-            setTimeout(() => {
-              modal.remove();
-              navigate(`#/service/${scannedUsNumber}`);
-            }, 1000);
-          }
-        } else {
+          );
+          
+          setTimeout(() => {
+            qrStatus.innerHTML = '✅ Камера готова. Наведите на QR-код...';
+          }, 1000);
+          
+        } catch (error) {
+          qrStatus.innerHTML = '';
           qrResult.innerHTML = `<div style="color: var(--accent-red); text-align: center;">
-            Неверный QR-код. Ожидается ссылка на УС.
+            ❌ Ошибка доступа к камере<br>
+            <small>${error.message || 'Проверьте разрешения браузера'}</small>
           </div>`;
         }
-      },
-      (errorMessage) => {
-        // Игнорируем ошибки сканирования
-      }
-    );
-  } catch (error) {
-    qrResult.innerHTML = `<div style="color: var(--accent-red); text-align: center;">
-      Ошибка инициализации камеры: ${error.message}
-    </div>`;
-  }
-  
-  stopButton.onclick = () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.clear();
-      qrResult.innerHTML = '<div style="color: var(--accent-orange); text-align: center;">Сканирование остановлено</div>';
-    }
-  };
-  
-  closeButton.onclick = () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.clear();
-    }
-    modal.remove();
-  };
-  
-  modal.querySelector('.overlay').onclick = () => {
-    if (html5QrcodeScanner) {
-      html5QrcodeScanner.clear();
-    }
-    modal.remove();
-  };
-};
+        
+        stopButton.onclick = () => {
+          if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+            qrResult.innerHTML = '<div style="color: var(--accent-orange);">⏸️ Сканирование остановлено</div>';
+            qrStatus.innerHTML = 'Для возобновления закройте и откройте сканер снова';
+          }
+        };
+        
+        closeButton.onclick = () => {
+          if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+          }
+          modal.remove();
+        };
+        
+        modal.querySelector('.overlay').onclick = () => {
+          if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+          }
+          modal.remove();
+        };
+      };
 
       return e('div',null,
         e('div',{className:'main-actions'},
@@ -905,7 +1003,7 @@ const showQRModal = () => {
           ),
           
           e('div',{className:'input-group'},
-            e('label',{className:'input-label'}, 'Номер УС (1-4)'),
+            e('label',{className:'input-label'}, 'Введите номер УС(1-СБЕР, 2-АЛЬФА, 3-СОВКОМБАНК, 4-Т-БАНК)'),
             e('input',{
               className: `us-input ${error ? 'error' : ''}`,
               type: 'text',
@@ -932,25 +1030,30 @@ const showQRModal = () => {
 
     function ServicePage({usNumber, navigate, sendMessage, addPoints}){
       const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+      useLucideIcons();
+  const getChatIdForButton = (buttonType) => {
+  if (client.isSber) return 'curus'; // Для Сбера все кнопки в чат ЦУРУС
+  if (buttonType === 'emergency' || buttonType === 'extraTime') return 'sppous';
+  return 'client'; // Остальные кнопки в чат ТП клиента
+};
 
-      const handleLoadRequest = (type) => {
-        const chatId = 'client';
-        const messageText = type === 'load' 
-          ? `Запрос на статус загрузки УС №${usNumber} (${client.name})`
-          : `Запрос на выгрузку УС №${usNumber} (${client.name})`;
-        
-        sendMessage(chatId, {type: 'text', text: messageText});
+      const startAutoChatSequence = (chatId, sequenceType, customParams = {}) => {
+        sendMessage(chatId, {type: 'text', text: customParams.initialMessage || `Ожидание подключения оператора по обращению по УС №${usNumber} клиента ${client.name}`});
         navigate(`#/chat/${chatId}/${usNumber}`);
         
+        // Автоматическая последовательность сообщений
         setTimeout(() => {
-          if (type === 'load') {
-            const success = Math.random() > 0.5;
-            const responseText = success 
-              ? 'Выгрузка осуществлена успешно' 
-              : 'Ошибка выгрузки!!! Обратитесь в поддержку';
-            sendMessage(chatId, {type: 'text', text: responseText});
+          if (sequenceType === 'emergency' || sequenceType === 'extraTime') {
+            sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор СППОУС, меня зовут Игорь, какой у Вас вопрос"});
+            sendMessage(chatId, {type: 'text', text: "Идет звонок"});
             
+            setTimeout(() => {
+              showQuestionSolvedModal(chatId, 'sppous');
+            }, 3000);
+          } else if (sequenceType === 'load') {
+            const success = Math.random() > 0.5;
             if (success) {
+              sendMessage(chatId, {type: 'text', text: "Загрузка осуществлена успешно"});
               setTimeout(() => {
                 const modal = document.createElement('div');
                 modal.innerHTML = `
@@ -963,46 +1066,159 @@ const showQRModal = () => {
                 `;
                 document.body.appendChild(modal);
                 addPoints(100);
-              }, 500);
+                setTimeout(() => showRatingModal(chatId), 2000);
+              }, 1000);
+            } else {
+              sendMessage(chatId, {type: 'text', text: "Ошибка загрузки!!! Обратитесь в поддержку"});
+              setTimeout(() => {
+                sendMessage(chatId, {type: 'text', text: "Идет подключение оператора ТП клиента"});
+                setTimeout(() => {
+                  sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
+                  sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
+                  setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 3000);
+                }, 2000);
+              }, 2000);
             }
-          } else {
-            sendMessage(chatId, {type: 'text', text: 'Заявка принята'});
+          } else if (sequenceType === 'unload') {
+            const success = Math.random() > 0.5;
+            if (success) {
+              sendMessage(chatId, {type: 'text', text: "Выгрузка согласована"});
+              setTimeout(() => showRatingModal(chatId), 2000);
+            } else {
+              sendMessage(chatId, {type: 'text', text: "Выгрузка не согласована, следуйте далее по маршруту"});
+              setTimeout(() => showRatingModal(chatId), 2000);
+            }
+          } else if (sequenceType === 'noAccess') {
+            sendMessage(chatId, {type: 'text', text: "Информация принята"});
           }
-        }, type === 'load' ? 1000 : 5000);
+        }, 2000);
+      };
+
+      const showQuestionSolvedModal = (chatId, operatorType) => {
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>Ваш вопрос решен?</h3>
+            <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+              <button class="btn btn-primary" id="question-yes">Да</button>
+              <button class="btn btn-neutral" id="question-no">Нет</button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('question-yes').onclick = () => {
+          modal.remove();
+          showRatingModal(chatId);
+        };
+        
+        document.getElementById('question-no').onclick = () => {
+          modal.remove();
+          if (operatorType === 'sppous') {
+            sendMessage(chatId, {type: 'text', text: "Идет подключение оператора ТП клиента"});
+            setTimeout(() => {
+              sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
+              sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
+              setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 5000);
+            }, 2000);
+          } else {
+            sendMessage(chatId, {type: 'text', text: "Звонок продолжается"});
+            setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 3000);
+          }
+        };
+      };
+
+      const showRatingModal = (chatId) => {
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>Оцените обслуживание</h3>
+            <div class="rating-stars">
+              <span class="star" onclick="window.setRating(1)">⭐</span>
+              <span class="star" onclick="window.setRating(2)">⭐</span>
+              <span class="star" onclick="window.setRating(3)">⭐</span>
+              <span class="star" onclick="window.setRating(4)">⭐</span>
+              <span class="star" onclick="window.setRating(5)">⭐</span>
+            </div>
+            <button class="btn btn-primary" onclick="window.submitRating()" style="margin-top:15px;">Отправить оценку</button>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        window.setRating = (stars) => {
+          const starElements = modal.querySelectorAll('.star');
+          starElements.forEach((star, index) => {
+            star.classList.toggle('active', index < stars);
+          });
+          window.currentRating = stars;
+        };
+
+        window.submitRating = () => {
+          const finalRating = window.currentRating || 0;
+          modal.remove();
+          if (finalRating > 0) {
+            // Архивируем чат
+            const archivedChat = {
+              usNumber,
+              client: client.name,
+              chatId,
+              messages: [], // В реальности здесь должны быть сообщения чата
+              rating: finalRating,
+              createdAt: Date.now()
+            };
+            // Здесь должна быть логика архивации
+            setTimeout(() => navigate('#/'), 1000);
+          }
+        };
+      };
+
+      const handleLoadRequest = (type) => {
+        const chatId = getChatIdForButton('load');
+        const initialMessage = type === 'load' 
+          ? `Запрос на статус загрузки УС №${usNumber} клиента ${client.name}`
+          : `Запрос на статус выгрузки УС №${usNumber} клиента ${client.name}`;
+        
+        startAutoChatSequence(chatId, type, { initialMessage });
       };
 
       const handleEmergency = () => {
-        const chatId = 'sppous';
-        sendMessage(chatId, {type: 'text', text: `Ожидание подключение оператора СППОУС и ТП КЛИЕНТА по обращению по УС №${usNumber} клиента ${client.name}`});
-        navigate(`#/chat/${chatId}/${usNumber}`);
+        const chatId = getChatIdForButton('emergency');
+        startAutoChatSequence(chatId, 'emergency');
       };
 
       const handleExtraTime = () => {
-        const chatId = 'sppous';
+        const chatId = getChatIdForButton('extraTime');
         sendMessage(chatId, {type: 'text', text: `Ожидание согласования доп. времени по УС №${usNumber} клиента ${client.name}`});
         navigate(`#/chat/${chatId}/${usNumber}`);
         
         setTimeout(() => {
           const approved = Math.random() > 0.5;
-          const responseText = approved 
-            ? 'Время согласовано' 
-            : 'Время не согласовано';
-          sendMessage(chatId, {type: 'text', text: responseText});
-        }, 5000);
+          if (approved) {
+            sendMessage(chatId, {type: 'text', text: "Время согласовано"});
+          } else {
+            sendMessage(chatId, {type: 'text', text: "Время не согласовано, осуществляется подключение оператора СППОУС"});
+            setTimeout(() => {
+              sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор СППОУС, меня зовут Игорь, какой у Вас вопрос"});
+              sendMessage(chatId, {type: 'text', text: "Идет звонок"});
+              setTimeout(() => showQuestionSolvedModal(chatId, 'sppous'), 3000);
+            }, 2000);
+          }
+        }, 3000);
       };
 
       const handleNoAccess = () => {
-        const chatId = 'client';
-        sendMessage(chatId, {type: 'text', text: `Отсутствие доступа к УС №${usNumber} клиента ${client.name}`});
-        navigate(`#/chat/${chatId}/${usNumber}`);
-        
-        setTimeout(() => {
-          sendMessage(chatId, {type: 'text', text: 'Информация принята'});
-        }, 1000);
+        const chatId = getChatIdForButton('noAccess');
+        startAutoChatSequence(chatId, 'noAccess', { 
+          initialMessage: `Отсутствие доступа к УС №${usNumber} клиента ${client.name}`
+        });
       };
 
       const handlePhoneCall = () => {
-        const phoneNumber = '+74951234567'; // Замените на нужный номер
+        const phoneNumber = '+74951234567';
         window.open(`tel:${phoneNumber}`, '_self');
       };
 
@@ -1016,7 +1232,7 @@ const showQRModal = () => {
         ),
         
         e('div',{className:'service-actions'},
-          e('button',{className:'service-btn', onClick:()=> navigate(`#/instructions/${usNumber}`)},
+          e('button',{className:'service-btn-instructions', onClick:()=> navigate(`#/instructions/${usNumber}`)},
             e('i',{className:'tile-icon', 'data-lucide':'file-text'}), 
             e('span',null, 'Инструкции')
           ),
@@ -1031,10 +1247,6 @@ const showQRModal = () => {
           e('button',{className:'service-btn', onClick:handleNoAccess},
             e('i',{className:'tile-icon', 'data-lucide':'lock'}), 
             e('span',null, 'Отсутствие доступа')
-          ),
-          e('button',{className:'service-btn', onClick:handlePhoneCall},
-            e('i',{className:'tile-icon', 'data-lucide':'phone'}), 
-            e('span',null, 'Позвонить')
           ),
           e('button',{className:'service-btn emergency', onClick:handleEmergency},
             e('i',{className:'tile-icon', 'data-lucide':'alert-triangle'}), 
@@ -1066,164 +1278,315 @@ const showQRModal = () => {
       );
     }
 
-    function ChatPage({chatId, usNumber, chats, onSend, onAttach, onImage, onArchive, onClearChat, navigate}){
-      const [text, setText] = useState('');
-      const [isArchived, setIsArchived] = useState(false);
-      const messagesRef = useRef(null);
-      const fileRef = useRef(null);
-      const cameraRef = useRef(null);
-      const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+ function ChatPage({
+  chatId,
+  usNumber,
+  chats,
+  onSend,
+  onAttach,
+  onImage,
+  onArchive,
+  onClearChat,
+  navigate,
+}) {
+  useLucideIcons();
+  const [text, setText] = useState("");
+  const [isArchived, setIsArchived] = useState(false);
+  const messagesRef = useRef(null);
+  const fileRef = useRef(null);
+  const cameraRef = useRef(null);
+  const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
 
-      useEffect(()=> {
-        if(messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-      }, [chats]);
-      useEffect(() => {
-  // Переинициализация иконок Lucide при каждом обновлении компонента
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
-});
-      const handleSend = ()=> {
-        if(!text.trim() || isArchived) return;
-        onSend({type:'text', text});
-        setText('');
-      };
+  useEffect(() => {
+    if (messagesRef.current)
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  }, [chats]);
 
-      const handleAttach = (e) => {
-        if (isArchived) return;
-        const f = e.target.files && e.target.files[0];
-        if(!f) return;
-        onAttach(f);
-        e.target.value = '';
-      };
+  useEffect(() => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  });
 
-      const handleCamera = (e) => {
-        if (isArchived) return;
-        const f = e.target.files && e.target.files[0];
-        if(!f) return;
-        onImage(f);
-        e.target.value = '';
-      };
+  const handleSend = () => {
+    if (!text.trim() || isArchived) return;
+    onSend({ type: "text", text });
+    setText("");
+  };
 
-      const handlePhoneCall = () => {
-        const phoneNumber = '+74951234567'; // Замените на нужный номер
-        window.open(`tel:${phoneNumber}`, '_self');
-      };
+  const handleAttach = (e) => {
+    if (isArchived) return;
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    onAttach(f);
+    e.target.value = "";
+  };
 
-      const showRatingModal = () => {
-        const modal = document.createElement('div');
-        modal.innerHTML = `
-          <div class="overlay"></div>
-          <div class="phone-modal">
-            <h3>Оцените обслуживание</h3>
-            <div class="rating-stars">
-              <span class="star" onclick="setRating(1)">⭐</span>
-              <span class="star" onclick="setRating(2)">⭐</span>
-              <span class="star" onclick="setRating(3)">⭐</span>
-              <span class="star" onclick="setRating(4)">⭐</span>
-              <span class="star" onclick="setRating(5)">⭐</span>
-            </div>
-            <button class="btn btn-primary" onclick="submitRating()" style="margin-top:15px;">Отправить оценку</button>
-          </div>
-        `;
-        
-        window.setRating = (stars) => {
-          const starElements = modal.querySelectorAll('.star');
-          starElements.forEach((star, index) => {
-            star.classList.toggle('active', index < stars);
-          });
-          window.currentRating = stars;
-        };
+  const handleCamera = (e) => {
+    if (isArchived) return;
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    onImage(f);
+    e.target.value = "";
+  };
 
-        window.submitRating = () => {
-          const finalRating = window.currentRating || 0;
-          if (finalRating > 0) {
-            handleCloseChat(finalRating);
-          }
-          modal.remove();
-        };
+  const handlePhoneCall = () => {
+    const phoneNumber = "+74951234567";
+    window.open(`tel:${phoneNumber}`, "_self");
+  };
 
-        document.body.appendChild(modal);
-      };
+  const showRatingModal = () => {
+    const modal = document.createElement("div");
+    modal.innerHTML = `
+      <div class="overlay"></div>
+      <div class="phone-modal">
+        <h3>Оцените обслуживание</h3>
+        <div class="rating-stars">
+          <span class="star" onclick="window.setRatingChat(1)">⭐</span>
+          <span class="star" onclick="window.setRatingChat(2)">⭐</span>
+          <span class="star" onclick="window.setRatingChat(3)">⭐</span>
+          <span class="star" onclick="window.setRatingChat(4)">⭐</span>
+          <span class="star" onclick="window.setRatingChat(5)">⭐</span>
+        </div>
+        <button class="btn btn-primary" onclick="window.submitRatingChat()" style="margin-top:15px;">Отправить оценку</button>
+      </div>
+    `;
 
-      const handleCloseChat = (userRating = 0) => {
+    document.body.appendChild(modal);
+
+    window.setRatingChat = (stars) => {
+      const starElements = modal.querySelectorAll(".star");
+      starElements.forEach((star, index) => {
+        star.classList.toggle("active", index < stars);
+      });
+      window.currentRatingChat = stars;
+    };
+
+    window.submitRatingChat = () => {
+      const finalRating = window.currentRatingChat || 0;
+      modal.remove();
+      if (finalRating > 0) {
         const archivedChat = onArchive({
           usNumber,
           client: client.name,
           chatId,
           messages: chats,
-          rating: userRating,
-          createdAt: Date.now()
+          rating: finalRating,
+          createdAt: Date.now(),
         });
-        
+
         onClearChat();
         setIsArchived(true);
-        
-        if (userRating > 0) {
-          setTimeout(() => {
-            navigate(`#/service/${usNumber}`);
-          }, 1000);
-        } else {
-          navigate(`#/service/${usNumber}`);
-        }
-      };
+        setTimeout(() => navigate("#/"), 1000);
+      }
+    };
+  };
 
-      const getChatTitle = () => {
-        return chatId === 'client' ? `ТП Клиента (${client.name})` : 'СППОУС';
-      };
+  const showExitConfirmModal = () => {
+    const modal = document.createElement("div");
+    modal.innerHTML = `
+      <div class="overlay"></div>
+      <div class="phone-modal">
+        <h3>Завершить чат?</h3>
+        <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+          <button class="btn btn-primary" id="exit-yes">Да</button>
+          <button class="btn btn-neutral" id="exit-no">Нет</button>
+        </div>
+      </div>
+    `;
 
-      return e('div',{className: isArchived ? 'archive-chat' : ''},
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
-          e('div',{style:{display:'flex',alignItems:'center',gap:'8px'}}, 
-            e('button',{className:'back', onClick:()=> navigate(`#/service/${usNumber}`)},
-              e('i',{className:'tile-icon', 'data-lucide':'arrow-left', style:{width:'16px',height:'16px'}}),
-              'Назад'
-            ),
-            e('span',{style:{fontWeight:700}}, getChatTitle())
-          ),
-          !isArchived && e('button',{className:'btn btn-sm btn-primary', onClick:showRatingModal}, 
-            e('i',{className:'tile-icon', 'data-lucide':'check-circle'}), 'Завершить чат')
+    document.body.appendChild(modal);
+
+    document.getElementById("exit-yes").onclick = () => {
+      modal.remove();
+      showRatingModal();
+    };
+
+    document.getElementById("exit-no").onclick = () => {
+      modal.remove();
+    };
+  };
+
+  // Обработчик кнопки назад
+  const handleBackClick = () => {
+    showExitConfirmModal();
+  };
+
+  const getChatTitle = () => {
+    if (chatId === "curus") return "ЦУРУС";
+    if (chatId === "client") return `ТП Клиента (${client.name})`;
+    return "СППОУС";
+  };
+
+  return e(
+    "div",
+    { className: isArchived ? "archive-chat" : "" },
+    e(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 10,
+        },
+      },
+      e(
+        "div",
+        {
+          style: { display: "flex", alignItems: "center", gap: "8px" },
+        },
+        e(
+          "button",
+          { className: "back", onClick: handleBackClick },
+          e("i", {
+            className: "tile-icon",
+            "data-lucide": "arrow-left", // ИСПРАВЛЕНО: была ошибка с item.chatId
+            style: { width: "16px", height: "16px" },
+          }),
+          "Назад"
         ),
-        e('div',{className:'chat-wrap'},
-          e('div',{ref:messagesRef,className:'messages'},
-            (chats || []).map(m => {
-              if(m.type==='text') return e('div',{key:m.id,className:'bubble me'}, m.text, e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
-              if(m.type==='image') return e('div',{key:m.id,className:'bubble me'}, e('img',{src:m.url, style:{maxWidth:220,borderRadius:8}}), e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
-              if(m.type==='file') return e('div',{key:m.id,className:'bubble me'},
-                e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
-                e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
-              );
-              return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
+        e("span", { style: { fontWeight: 700 } }, getChatTitle())
+      )
+    ),
+    e(
+      "div",
+      { className: "chat-wrap" },
+      e(
+        "div",
+        { ref: messagesRef, className: "messages" },
+        (chats || []).map((m) => {
+          if (m.type === "text")
+            return e(
+              "div",
+              { key: m.id, className: "bubble me" },
+              m.text,
+              e(
+                "div",
+                { className: "msg-meta" },
+                new Date(m.ts).toLocaleTimeString()
+              )
+            );
+          if (m.type === "image")
+            return e(
+              "div",
+              { key: m.id, className: "bubble me" },
+              e("img", {
+                src: m.url,
+                style: { maxWidth: 220, borderRadius: 8 },
+              }),
+              e(
+                "div",
+                { className: "msg-meta" },
+                new Date(m.ts).toLocaleTimeString()
+              )
+            );
+          if (m.type === "file")
+            return e(
+              "div",
+              { key: m.id, className: "bubble me" },
+              e(
+                "div",
+                { className: "file-preview" },
+                e(
+                  "a",
+                  { href: m.url, target: "_blank" },
+                  m.fileName || "Файл"
+                )
+              ),
+              e(
+                "div",
+                { className: "msg-meta" },
+                new Date(m.ts).toLocaleTimeString()
+              )
+            );
+          return e(
+            "div",
+            { key: m.id, className: "bubble me" },
+            JSON.stringify(m)
+          );
+        })
+      ),
+      e(
+        "div",
+        { className: "chat-input" },
+        e("input", {
+          type: "text",
+          placeholder: isArchived
+            ? "Чат завершен"
+            : "Напишите сообщение...",
+          value: text,
+          onChange: (e) => setText(e.target.value),
+          onKeyDown: (ev) => {
+            if (ev.key === "Enter") handleSend();
+          },
+          disabled: isArchived,
+        }),
+        e(
+          "div",
+          { className: "chat-actions" },
+          e(
+            "label",
+            { className: "icon-btn", title: "Прикрепить файл" },
+            e("input", {
+              type: "file",
+              style: { display: "none" },
+              ref: fileRef,
+              onChange: handleAttach,
+            }),
+            e("i", {
+              className: "tile-icon",
+              "data-lucide": "paperclip",
+              style: { width: "18px", height: "18px" },
             })
           ),
-          e('div',{className:'chat-input'},
-            e('input',{
-              type:'text', 
-              placeholder: isArchived ? 'Чат завершен' : 'Напишите сообщение...', 
-              value:text, 
-              onChange:(e)=>setText(e.target.value), 
-              onKeyDown:(ev)=>{ if(ev.key==='Enter') handleSend(); },
-              disabled: isArchived
+          e(
+            "label",
+            { className: "icon-btn", title: "Открыть камеру" },
+            e("input", {
+              type: "file",
+              accept: "image/*",
+              capture: "environment",
+              style: { display: "none" },
+              ref: cameraRef,
+              onChange: handleCamera,
             }),
-            e('div',{className:'chat-actions'},
-              e('label',{className:'icon-btn', title:'Прикрепить файл'},
-                e('input',{type:'file', style:{display:'none'}, ref:fileRef, onChange:handleAttach}),
-                e('i',{className:'tile-icon', 'data-lucide':'paperclip', style:{width:'18px',height:'18px'}})
-              ),
-              e('label',{className:'icon-btn', title:'Открыть камеру'},
-                e('input',{type:'file', accept:'image/*', capture:'environment', style:{display:'none'}, ref:cameraRef, onChange:handleCamera}),
-                e('i',{className:'tile-icon', 'data-lucide':'camera', style:{width:'18px',height:'18px'}})
-              ),
-              e('button',{className:'icon-btn', title:'Позвонить', onClick:handlePhoneCall},
-                e('i',{className:'tile-icon', 'data-lucide':'phone', style:{width:'18px',height:'18px'}})
-              ),
-              e('button',{className:'btn btn-sm btn-primary', onClick:handleSend}, 
-                e('i',{className:'tile-icon', 'data-lucide':'send', style:{width:'16px',height:'16px'}}))
-            )
+            e("i", {
+              className: "tile-icon",
+              "data-lucide": "camera",
+              style: { width: "18px", height: "18px" },
+            })
+          ),
+          e(
+            "button",
+            {
+              className: "icon-btn",
+              title: "Позвонить",
+              onClick: handlePhoneCall,
+            },
+            e("i", {
+              className: "tile-icon",
+              "data-lucide": "phone",
+              style: { width: "18px", height: "18px" },
+            })
+          ),
+          e(
+            "button",
+            {
+              className: "btn btn-sm btn-primary",
+              onClick: handleSend,
+            },
+            e("i", {
+              className: "tile-icon",
+              "data-lucide": "send",
+              style: { width: "16px", height: "16px" },
+            })
           )
         )
-      );
-    }
+      )
+    )
+  );
+}
 
     function ArchivePage({archive, navigate}){
       return e('div',null,
@@ -1291,7 +1654,10 @@ const showQRModal = () => {
           ),
           e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
             e('i',{className:'tile-icon', 'data-lucide':archivedChat.chatId === 'client' ? 'message-circle' : 'headphones', style:{width:'16px',height:'16px'}}),
-            e('div',{style:{opacity:0.8}}, `Чат: ${archivedChat.chatId === 'client' ? 'ТП Клиента' : 'СППОУС'}`)
+            e('div',{style:{opacity:0.8}}, `Чат: ${
+  archivedChat.chatId === 'curus' ? 'ЦУРУС' : 
+  archivedChat.chatId === 'client' ? 'ТП Клиента' : 'СППОУС'
+}`)
           ),
           e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
             e('i',{className:'tile-icon', 'data-lucide':'calendar', style:{width:'16px',height:'16px'}}),
