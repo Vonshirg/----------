@@ -211,7 +211,7 @@
       background: transparent;
       color: var(--text-light);
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      -moz-osx-font-smoothing: grascale;
       font-family: Inter, "Helvetica Neue", Arial, sans-serif;
     }
 
@@ -849,16 +849,18 @@
       3: { name: 'Совкомбанк', shortName: 'Совком', logo: 'С', color: '#8cc054', isSber: false },
       4: { name: 'Т-Банк', shortName: 'Т-Банк', logo: 'Т', color: '#ff6b00', isSber: false }
     };
+
     function useLucideIcons() {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-    }, 50);
-    return () => clearTimeout(timer);
-  });
-}
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }, 50);
+        return () => clearTimeout(timer);
+      });
+    }
+
     // --- Simple hash router ---
     function useHashRoute() {
       const [hash, setHash] = useState(location.hash || '#/');
@@ -917,6 +919,43 @@
         });
       };
 
+      // Единая функция архивации чата
+const archiveChat = (chatId, usNumber, rating) => {
+  const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+  const archiveId = 'arch_' + Date.now();
+
+  setChats(prev => {
+    const messages = prev[chatId] || [];
+    const archivedChat = {
+      usNumber,
+      client: client.name,
+      chatId,
+      messages: [...messages],
+      rating,
+      createdAt: Date.now(),
+      closedAt: Date.now(),
+      id: archiveId
+    };
+
+    setArchive(a => [...a, archivedChat]);
+
+    return {
+      ...prev,
+      [chatId]: []
+    };
+  });
+
+  return archiveId; // 🔥 возвращаем ID!
+};
+
+
+      // Функция для обновления рейтинга в архиве
+      const updateArchiveRating = (archiveId, rating) => {
+        setArchive(prev => prev.map(item => 
+          item.id === archiveId ? {...item, rating} : item
+        ));
+      };
+
       // route parsing
       const route = (hash || '#/').replace(/^#/, '');
       const parts = route.split('/').filter(Boolean);
@@ -948,23 +987,20 @@
         sendMessage(chatId, {type:'image', url});
       };
 
-      const addToArchive = (chatData) => {
-        const archivedChat = {
-          ...chatData, 
-          id: uid('arch'), 
-          closedAt: Date.now(),
-          messages: [...chatData.messages]
-        };
-        setArchive(prev => [...prev, archivedChat]);
-        return archivedChat;
-      };
-
       return e('div',{className:'app'},
         e(BalanceHeader, {balance}),
         e(Header, {theme, setTheme, navigate}),
         e('div', {className:'page'},
           page==='home' && e(HomePage, {navigate, addPoints}),
-          page==='service' && e(ServicePage, {usNumber, navigate, sendMessage, addPoints}),
+          page==='service' && e(ServicePage, {
+            usNumber, 
+            navigate, 
+            sendMessage, 
+            addPoints, 
+            archiveChat,
+            updateArchiveRating,
+            chats
+          }),
           page==='instructions' && e(InstructionsPage, {usNumber, navigate}),
           page==='chat' && e(ChatPage, {
             chatId: param,
@@ -973,19 +1009,12 @@
             onSend: (m)=> sendMessage(param, m),
             onAttach: (file)=> attachFileToChat(param, file),
             onImage: (file)=> pushImageFromCapture(param, file),
-            onArchive: addToArchive,
-            onClearChat: () => clearChat(param),
+            archiveChat,
             navigate
           }),
           page==='archive' && e(ArchivePage, {archive, navigate}),
           page==='archive-view' && e(ArchiveViewPage, {archive, archiveId, navigate})
-        ),
-        // e('div',{className:'bottom-nav'},
-        //   e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/')}, 
-        //     e('i',{className:'tile-icon', 'data-lucide':'home'}), 'Главная'),
-        //   e('button',{className:'btn btn-neutral', onClick:()=>navigate('#/archive')}, 
-        //     e('i',{className:'tile-icon', 'data-lucide':'archive'}), 'Архив')
-        // )
+        )
       );
     }
 
@@ -1203,149 +1232,194 @@
       );
     }
 
-    function ServicePage({usNumber, navigate, sendMessage, addPoints}){
+    function ServicePage({usNumber, navigate, sendMessage, addPoints, archiveChat, updateArchiveRating, chats}){
       const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
       useLucideIcons();
-  const getChatIdForButton = (buttonType) => {
-  if (client.isSber) return 'curus'; // Для Сбера все кнопки в чат ЦУРУС
-  if (buttonType === 'emergency' || buttonType === 'extraTime') return 'sppous';
-  return 'client'; // Остальные кнопки в чат ТП клиента
+
+      const getChatIdForButton = (buttonType) => {
+        if (client.isSber) return 'curus';
+        if (buttonType === 'emergency' || buttonType === 'extraTime') return 'sppous';
+        return 'client';
+      };
+
+const startAutoChatSequence = (chatId, sequenceType, customParams = {}) => {
+  sendMessage(chatId, {
+    type: 'text',
+    text: customParams.initialMessage ||
+      `Ожидание подключения оператора по обращению по УС №${usNumber} клиента ${client.name}`
+  });
+
+  navigate(`#/chat/${chatId}/${usNumber}`);
+
+  setTimeout(() => {
+   if (sequenceType === 'emergency' || sequenceType === 'extraTime') {
+  const operatorName = client.isSber ? "Надежда" : "Игорь";
+  const operatorService = client.isSber ? "ЦУРУС" : "СППОУС";
+
+  sendMessage(chatId, { type: 'text', text: `Здравствуйте! Я оператор ${operatorService}, меня зовут ${operatorName}. Какой у Вас вопрос?` });
+  sendMessage(chatId, { type: 'text', text: "Звонок продолжается..." });
+
+  setTimeout(() => {
+    showQuestionSolvedModal(chatId, client.isSber ? 'curus' : 'sppous', false);
+  }, 3000);
+}
+
+    else if (sequenceType === 'load') {
+  const success = Math.random() > 0.5;
+  if (success) {
+    sendMessage(chatId, { type: 'text', text: "Загрузка осуществлена успешно" });
+    setTimeout(() => {
+      const modal = document.createElement('div');
+      modal.innerHTML = `
+        <div class="overlay"></div>
+        <div class="phone-modal success-modal">
+          <h3>🎉 Поздравляем!</h3>
+          <p>Вам начислено 100 Баллов</p>
+          <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Отлично!</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      addPoints(100);
+      setTimeout(() => completeChatWithRating(chatId), 2000);
+    }, 1500);
+  } else {
+    sendMessage(chatId, { type: 'text', text: "Ошибка загрузки! Обратитесь в поддержку." });
+    setTimeout(() => {
+      sendMessage(chatId, { type: 'text', text: "Идет подключение оператора ТП клиента..." });
+      setTimeout(() => {
+        if (client.isSber) {
+          sendMessage(chatId, { type: 'text', text: "Здравствуйте! Я оператор ЦУРУС, меня зовут Надежда. Какой у Вас вопрос?" });
+        } else {
+          sendMessage(chatId, { type: 'text', text: "Здравствуйте, меня зовут Ольга. Я оператор технической поддержки клиента. Какой у Вас вопрос?" });
+        }
+        // Передаем skipTpConnection = true, так как Ольга уже подключилась
+        setTimeout(() => showQuestionSolvedModal(chatId, 'client', false, true), 3000);
+      }, 2000);
+    }, 2000);
+  }
+}
+
+    else if (sequenceType === 'unload') {
+      const success = Math.random() > 0.5;
+      sendMessage(chatId, {
+        type: 'text',
+        text: success ? "Выгрузка согласована" : "Выгрузка не согласована, следуйте далее по маршруту"
+      });
+      setTimeout(() => showRatingModal(chatId), 2000);
+    }
+
+    else if (sequenceType === 'noAccess') {
+      sendMessage(chatId, { type: 'text', text: "Информация принята" });
+      setTimeout(() => showRatingModal(chatId), 2000);
+    }
+  }, 2000);
 };
 
-      const startAutoChatSequence = (chatId, sequenceType, customParams = {}) => {
-        sendMessage(chatId, {type: 'text', text: customParams.initialMessage || `Ожидание подключения оператора по обращению по УС №${usNumber} клиента ${client.name}`});
-        navigate(`#/chat/${chatId}/${usNumber}`);
+
+      // Функция для завершения чата с рейтингом
+      const completeChatWithRating = (chatId) => {
+        // Получаем актуальные сообщения из состояния
+        const currentMessages = chats[chatId] || [];
         
-        // Автоматическая последовательность сообщений
+        // Архивируем с временным рейтингом 0
+        const archiveId = archiveChat(chatId, usNumber, 0, currentMessages);
+        
+        // Показываем оценку
         setTimeout(() => {
-          if (sequenceType === 'emergency' || sequenceType === 'extraTime') {
-            sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор СППОУС, меня зовут Игорь, какой у Вас вопрос"});
-            sendMessage(chatId, {type: 'text', text: "Идет звонок"});
-            
-            setTimeout(() => {
-              showQuestionSolvedModal(chatId, 'sppous');
-            }, 3000);
-          } else if (sequenceType === 'load') {
-            const success = Math.random() > 0.5;
-            if (success) {
-              sendMessage(chatId, {type: 'text', text: "Загрузка осуществлена успешно"});
-              setTimeout(() => {
-                const modal = document.createElement('div');
-                modal.innerHTML = `
-                  <div class="overlay"></div>
-                  <div class="phone-modal success-modal">
-                    <h3>🎉 Поздравляем!</h3>
-                    <p>Вам начислено 100 Баллов</p>
-                    <button class="btn btn-primary" onclick="this.closest('.phone-modal').parentElement.remove()" style="margin-top:15px;">Отлично!</button>
-                  </div>
-                `;
-                document.body.appendChild(modal);
-                addPoints(100);
-                setTimeout(() => showRatingModal(chatId), 2000);
-              }, 1000);
-            } else {
-              sendMessage(chatId, {type: 'text', text: "Ошибка загрузки!!! Обратитесь в поддержку"});
-              setTimeout(() => {
-                sendMessage(chatId, {type: 'text', text: "Идет подключение оператора ТП клиента"});
-                setTimeout(() => {
-                  sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
-                  sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
-                  setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
-                }, 2000);
-              }, 2000);
-            }
-          } else if (sequenceType === 'unload') {
-            const success = Math.random() > 0.5;
-            if (success) {
-              sendMessage(chatId, {type: 'text', text: "Выгрузка согласована"});
-              setTimeout(() => showRatingModal(chatId), 2000);
-            } else {
-              sendMessage(chatId, {type: 'text', text: "Выгрузка не согласована, следуйте далее по маршруту"});
-              setTimeout(() => showRatingModal(chatId), 2000);
-            }
-          } else if (sequenceType === 'noAccess') {
-            sendMessage(chatId, {type: 'text', text: "Информация принята"});
-          }
-        }, 2000);
+          showFinalRatingModal(archiveId);
+        }, 100);
       };
 
-      const showQuestionSolvedModal = (chatId, operatorType) => {
-        const modal = document.createElement('div');
-        modal.innerHTML = `
-          <div class="overlay"></div>
-          <div class="phone-modal">
-            <h3>Ваш вопрос решен?</h3>
-            <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
-              <button class="btn btn-primary" id="question-yes">Да</button>
-              <button class="btn btn-neutral" id="question-no">Нет</button>
-            </div>
-          </div>
-        `;
+const showQuestionSolvedModal = (chatId, operatorType, isSecondAttempt = false, skipTpConnection = false) => {
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <div class="overlay"></div>
+    <div class="phone-modal">
+      <h3>Ваш вопрос решен?</h3>
+      <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+        <button class="btn btn-primary" id="question-yes">Да</button>
+        <button class="btn btn-neutral" id="question-no">Нет</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  document.getElementById('question-yes').onclick = () => {
+    modal.remove();
+    sendMessage(chatId, {type: 'text', text: "Вопрос решен, спасибо!"});
+    setTimeout(() => {
+      completeChatWithRating(chatId);
+    }, 500);
+  };
+  
+  document.getElementById('question-no').onclick = () => {
+    modal.remove();
+    
+    const isSberClient = client.isSber;
+    const isCurusOperator = operatorType === 'curus';
+    
+    if (!isSecondAttempt && !isCurusOperator && !skipTpConnection) {
+      // Первое нажатие "Нет" для НЕ-ЦУРУС (СППОУС) и когда не нужно пропускать подключение ТП
+      sendMessage(chatId, {type: 'text', text: "Идет подключение оператора ТП клиента..."});
+      
+      setTimeout(() => {
+        if (isSberClient) {
+          sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор ЦУРУС, меня зовут Надежда. Какой у Вас вопрос?"});
+        } else {
+          sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга. Я оператор технической поддержки клиента. Какой у Вас вопрос?"});
+        }
         
-        document.body.appendChild(modal);
-        
-        document.getElementById('question-yes').onclick = () => {
-          modal.remove();
-          showRatingModal(chatId);
-        };
-        
-        document.getElementById('question-no').onclick = () => {
-          modal.remove();
-          if (operatorType === 'sppous') {
-            sendMessage(chatId, {type: 'text', text: "Идет подключение оператора ТП клиента"});
-            setTimeout(() => {
-              sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
-              sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
-              setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
-            }, 2000);
-          } else {
-            sendMessage(chatId, {type: 'text', text: "Звонок продолжается"});
-            setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
-          }
-        };
-      };
+        setTimeout(() => {
+          showQuestionSolvedModal(chatId, 'client', true);
+        }, 3000);
+      }, 2000);
+    } else {
+      // Для ЦУРУС, второго нажатия или когда нужно пропустить подключение ТП
+      sendMessage(chatId, {type: 'text', text: "Звонок продолжается"});
+      setTimeout(() => {
+        showQuestionSolvedModal(chatId, operatorType, true);
+      }, 3000);
+    }
+  };
+};
 
-      const showRatingModal = (chatId) => {
+      // Функция для показа оценки после архивации
+      const showFinalRatingModal = (archiveId) => {
         const modal = document.createElement('div');
         modal.innerHTML = `
           <div class="overlay"></div>
           <div class="phone-modal">
             <h3>Оцените обслуживание</h3>
             <div class="rating-stars">
-              <span class="star" onclick="window.setRating(1)">⭐</span>
-              <span class="star" onclick="window.setRating(2)">⭐</span>
-              <span class="star" onclick="window.setRating(3)">⭐</span>
-              <span class="star" onclick="window.setRating(4)">⭐</span>
-              <span class="star" onclick="window.setRating(5)">⭐</span>
+              <span class="star" onclick="window.setFinalRating(1)">⭐</span>
+              <span class="star" onclick="window.setFinalRating(2)">⭐</span>
+              <span class="star" onclick="window.setFinalRating(3)">⭐</span>
+              <span class="star" onclick="window.setFinalRating(4)">⭐</span>
+              <span class="star" onclick="window.setFinalRating(5)">⭐</span>
             </div>
-            <button class="btn btn-primary" onclick="window.submitRating()" style="margin-top:15px;">Отправить оценку</button>
+            <button class="btn btn-primary" onclick="window.submitFinalRating('${archiveId}')" style="margin-top:15px;">Отправить оценку</button>
           </div>
         `;
         
         document.body.appendChild(modal);
         
-        window.setRating = (stars) => {
+        window.setFinalRating = (stars) => {
           const starElements = modal.querySelectorAll('.star');
           starElements.forEach((star, index) => {
             star.classList.toggle('active', index < stars);
           });
-          window.currentRating = stars;
+          window.finalRating = stars;
         };
 
-        window.submitRating = () => {
-          const finalRating = window.currentRating || 0;
+        window.submitFinalRating = (archId) => {
+          const finalRating = window.finalRating || 0;
           modal.remove();
+          
           if (finalRating > 0) {
-            // Архивируем чат
-            const archivedChat = {
-              usNumber,
-              client: client.name,
-              chatId,
-              messages: [], // В реальности здесь должны быть сообщения чата
-              rating: finalRating,
-              createdAt: Date.now()
-            };
-            // Здесь должна быть логика архивации
+            // Обновляем архив с финальной оценкой
+            updateArchiveRating(archId, finalRating);
+            
             setTimeout(() => navigate('#/'), 1000);
           }
         };
@@ -1365,37 +1439,38 @@
         startAutoChatSequence(chatId, 'emergency');
       };
 
-      const handleExtraTime = () => {
-        const chatId = getChatIdForButton('extraTime');
-        sendMessage(chatId, {type: 'text', text: `Ожидание согласования доп. времени по УС №${usNumber} клиента ${client.name}`});
-        navigate(`#/chat/${chatId}/${usNumber}`);
+const handleExtraTime = () => {
+  const chatId = getChatIdForButton('extraTime');
+  sendMessage(chatId, {type: 'text', text: `Ожидание согласования доп. времени по УС №${usNumber} клиента ${client.name}`});
+  navigate(`#/chat/${chatId}/${usNumber}`);
+  
+  setTimeout(() => {
+    const approved = Math.random() > 0.5;
+    if (approved) {
+      sendMessage(chatId, {type: 'text', text: "Время согласовано"});
+      setTimeout(() => {
+        completeChatWithRating(chatId);
+      }, 2000);
+    } else {
+      sendMessage(chatId, {type: 'text', text: "Время не согласовано, осуществляется подключение оператора " + (client.isSber ? "ЦУРУС" : "СППОУС")});
+      setTimeout(() => {
+        const operatorName = client.isSber ? "Надежда" : "Игорь";
+        const operatorService = client.isSber ? "ЦУРУС" : "СППОУС";
         
-        setTimeout(() => {
-          const approved = Math.random() > 0.5;
-          if (approved) {
-            sendMessage(chatId, {type: 'text', text: "Время согласовано"});
-          } else {
-            sendMessage(chatId, {type: 'text', text: "Время не согласовано, осуществляется подключение оператора СППОУС"});
-            setTimeout(() => {
-              sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор СППОУС, меня зовут Игорь, какой у Вас вопрос"});
-              sendMessage(chatId, {type: 'text', text: "Идет звонок"});
-              setTimeout(() => showQuestionSolvedModal(chatId, 'sppous'), 6000);
-            }, 2000);
-          }
-        }, 3000);
-      };
+        sendMessage(chatId, {type: 'text', text: `Здравствуйте! Я оператор ${operatorService}, меня зовут ${operatorName}, какой у Вас вопрос`});
+        sendMessage(chatId, {type: 'text', text: "Звонок продолжается"});
+        setTimeout(() => showQuestionSolvedModal(chatId, operatorService.toLowerCase()), 3000);
+      }, 2000);
+    }
+  }, 3000);
+};
 
       const handleNoAccess = () => {
-        const chatId = getChatIdForButton('noAccess');
-        startAutoChatSequence(chatId, 'noAccess', { 
-          initialMessage: `Отсутствие доступа к УС №${usNumber} клиента ${client.name}`
-        });
-      };
-
-      const handlePhoneCall = () => {
-        const phoneNumber = '+74951234567';
-        window.open(`tel:${phoneNumber}`, '_self');
-      };
+  const chatId = getChatIdForButton('noAccess');
+  startAutoChatSequence(chatId, 'noAccess', { 
+    initialMessage: `Отсутствие доступа к УС №${usNumber} клиента ${client.name}`
+  });
+};
 
       return e('div',null,
         e('div',{className:'service-header'},
@@ -1453,315 +1528,299 @@
       );
     }
 
- function ChatPage({
-  chatId,
-  usNumber,
-  chats,
-  onSend,
-  onAttach,
-  onImage,
-  onArchive,
-  onClearChat,
-  navigate,
-}) {
-  useLucideIcons();
-  const [text, setText] = useState("");
-  const [isArchived, setIsArchived] = useState(false);
-  const messagesRef = useRef(null);
-  const fileRef = useRef(null);
-  const cameraRef = useRef(null);
-  const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
+    function ChatPage({
+      chatId,
+      usNumber,
+      chats,
+      onSend,
+      onAttach,
+      onImage,
+      archiveChat,
+      navigate,
+    }) {
+      useLucideIcons();
+      const [text, setText] = useState("");
+      const [isArchived, setIsArchived] = useState(false);
+      const messagesRef = useRef(null);
+      const fileRef = useRef(null);
+      const cameraRef = useRef(null);
+      const client = CLIENTS_DATA[usNumber] || CLIENTS_DATA[1];
 
-  useEffect(() => {
-    if (messagesRef.current)
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-  }, [chats]);
+      useEffect(() => {
+        if (messagesRef.current)
+          messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+      }, [chats]);
 
-  useEffect(() => {
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-  });
+      const handleSend = () => {
+        if (!text.trim() || isArchived) return;
+        onSend({ type: "text", text });
+        setText("");
+      };
 
-  const handleSend = () => {
-    if (!text.trim() || isArchived) return;
-    onSend({ type: "text", text });
-    setText("");
-  };
+      const handleAttach = (e) => {
+        if (isArchived) return;
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        onAttach(f);
+        e.target.value = "";
+      };
 
-  const handleAttach = (e) => {
-    if (isArchived) return;
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    onAttach(f);
-    e.target.value = "";
-  };
+      const handleCamera = (e) => {
+        if (isArchived) return;
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        onImage(f);
+        e.target.value = "";
+      };
 
-  const handleCamera = (e) => {
-    if (isArchived) return;
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    onImage(f);
-    e.target.value = "";
-  };
+      const handlePhoneCall = () => {
+        const phoneNumber = "+74951234567";
+        window.open(`tel:${phoneNumber}`, "_self");
+      };
 
-  const handlePhoneCall = () => {
-    const phoneNumber = "+74951234567";
-    window.open(`tel:${phoneNumber}`, "_self");
-  };
+      const showRatingModal = () => {
+        const modal = document.createElement("div");
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>Оцените обслуживание</h3>
+            <div class="rating-stars">
+              <span class="star" onclick="window.setRatingChat(1)">⭐</span>
+              <span class="star" onclick="window.setRatingChat(2)">⭐</span>
+              <span class="star" onclick="window.setRatingChat(3)">⭐</span>
+              <span class="star" onclick="window.setRatingChat(4)">⭐</span>
+              <span class="star" onclick="window.setRatingChat(5)">⭐</span>
+            </div>
+            <button class="btn btn-primary" onclick="window.submitRatingChat()" style="margin-top:15px;">Отправить оценку</button>
+          </div>
+        `;
 
-  const showRatingModal = () => {
-    const modal = document.createElement("div");
-    modal.innerHTML = `
-      <div class="overlay"></div>
-      <div class="phone-modal">
-        <h3>Оцените обслуживание</h3>
-        <div class="rating-stars">
-          <span class="star" onclick="window.setRatingChat(1)">⭐</span>
-          <span class="star" onclick="window.setRatingChat(2)">⭐</span>
-          <span class="star" onclick="window.setRatingChat(3)">⭐</span>
-          <span class="star" onclick="window.setRatingChat(4)">⭐</span>
-          <span class="star" onclick="window.setRatingChat(5)">⭐</span>
-        </div>
-        <button class="btn btn-primary" onclick="window.submitRatingChat()" style="margin-top:15px;">Отправить оценку</button>
-      </div>
-    `;
+        document.body.appendChild(modal);
 
-    document.body.appendChild(modal);
+        window.setRatingChat = (stars) => {
+          const starElements = modal.querySelectorAll(".star");
+          starElements.forEach((star, index) => {
+            star.classList.toggle("active", index < stars);
+          });
+          window.currentRatingChat = stars;
+        };
 
-    window.setRatingChat = (stars) => {
-      const starElements = modal.querySelectorAll(".star");
-      starElements.forEach((star, index) => {
-        star.classList.toggle("active", index < stars);
-      });
-      window.currentRatingChat = stars;
-    };
+        window.submitRatingChat = () => {
+          const finalRating = window.currentRatingChat || 0;
+          modal.remove();
+          if (finalRating > 0) {
+            // Архивируем и завершаем чат
+            archiveChat(chatId, usNumber, finalRating, chats);
+            setIsArchived(true);
+            setTimeout(() => navigate("#/"), 1000);
+          }
+        };
+      };
 
-    window.submitRatingChat = () => {
-      const finalRating = window.currentRatingChat || 0;
-      modal.remove();
-      if (finalRating > 0) {
-        const archivedChat = onArchive({
-          usNumber,
-          client: client.name,
-          chatId,
-          messages: chats,
-          rating: finalRating,
-          createdAt: Date.now(),
-        });
+      const showExitConfirmModal = () => {
+        const modal = document.createElement("div");
+        modal.innerHTML = `
+          <div class="overlay"></div>
+          <div class="phone-modal">
+            <h3>Завершить чат?</h3>
+            <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+              <button class="btn btn-primary" id="exit-yes">Да</button>
+              <button class="btn btn-neutral" id="exit-no">Нет</button>
+            </div>
+          </div>
+        `;
 
-        onClearChat();
-        setIsArchived(true);
-        setTimeout(() => navigate("#/"), 1000);
-      }
-    };
-  };
+        document.body.appendChild(modal);
 
-  const showExitConfirmModal = () => {
-    const modal = document.createElement("div");
-    modal.innerHTML = `
-      <div class="overlay"></div>
-      <div class="phone-modal">
-        <h3>Завершить чат?</h3>
-        <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
-          <button class="btn btn-primary" id="exit-yes">Да</button>
-          <button class="btn btn-neutral" id="exit-no">Нет</button>
-        </div>
-      </div>
-    `;
+        document.getElementById("exit-yes").onclick = () => {
+          modal.remove();
+          showRatingModal();
+        };
 
-    document.body.appendChild(modal);
+        document.getElementById("exit-no").onclick = () => {
+          modal.remove();
+        };
+      };
 
-    document.getElementById("exit-yes").onclick = () => {
-      modal.remove();
-      showRatingModal();
-    };
+      const handleBackClick = () => {
+        showExitConfirmModal();
+      };
 
-    document.getElementById("exit-no").onclick = () => {
-      modal.remove();
-    };
-  };
+      const getChatTitle = () => {
+        if (chatId === "curus") return "ЦУРУС";
+        if (chatId === "client") return `ТП Клиента (${client.name})`;
+        return "СППОУС";
+      };
 
-  // Обработчик кнопки назад
-  const handleBackClick = () => {
-    showExitConfirmModal();
-  };
-
-  const getChatTitle = () => {
-    if (chatId === "curus") return "ЦУРУС";
-    if (chatId === "client") return `ТП Клиента (${client.name})`;
-    return "СППОУС";
-  };
-
-  return e(
-    "div",
-    { className: isArchived ? "archive-chat" : "" },
-    e(
-      "div",
-      {
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
-        },
-      },
-      e(
+      return e(
         "div",
-        {
-          style: { display: "flex", alignItems: "center", gap: "8px" },
-        },
-        e(
-          "button",
-          { className: "back", onClick: handleBackClick },
-          e("i", {
-            className: "tile-icon",
-            "data-lucide": "arrow-left", // ИСПРАВЛЕНО: была ошибка с item.chatId
-            style: { width: "16px", height: "16px" },
-          }),
-          "Назад"
-        ),
-        e("span", { style: { fontWeight: 700 } }, getChatTitle())
-      )
-    ),
-    e(
-      "div",
-      { className: "chat-wrap" },
-      e(
-        "div",
-        { ref: messagesRef, className: "messages" },
-        (chats || []).map((m) => {
-          if (m.type === "text")
-            return e(
-              "div",
-              { key: m.id, className: "bubble me" },
-              m.text,
-              e(
-                "div",
-                { className: "msg-meta" },
-                new Date(m.ts).toLocaleTimeString()
-              )
-            );
-          if (m.type === "image")
-            return e(
-              "div",
-              { key: m.id, className: "bubble me" },
-              e("img", {
-                src: m.url,
-                style: { maxWidth: 220, borderRadius: 8 },
-              }),
-              e(
-                "div",
-                { className: "msg-meta" },
-                new Date(m.ts).toLocaleTimeString()
-              )
-            );
-          if (m.type === "file")
-            return e(
-              "div",
-              { key: m.id, className: "bubble me" },
-              e(
-                "div",
-                { className: "file-preview" },
-                e(
-                  "a",
-                  { href: m.url, target: "_blank" },
-                  m.fileName || "Файл"
-                )
-              ),
-              e(
-                "div",
-                { className: "msg-meta" },
-                new Date(m.ts).toLocaleTimeString()
-              )
-            );
-          return e(
-            "div",
-            { key: m.id, className: "bubble me" },
-            JSON.stringify(m)
-          );
-        })
-      ),
-      e(
-        "div",
-        { className: "chat-input" },
-        e("input", {
-          type: "text",
-          placeholder: isArchived
-            ? "Чат завершен"
-            : "Напишите сообщение...",
-          value: text,
-          onChange: (e) => setText(e.target.value),
-          onKeyDown: (ev) => {
-            if (ev.key === "Enter") handleSend();
-          },
-          disabled: isArchived,
-        }),
+        { className: isArchived ? "archive-chat" : "" },
         e(
           "div",
-          { className: "chat-actions" },
-          e(
-            "label",
-            { className: "icon-btn", title: "Прикрепить файл" },
-            e("input", {
-              type: "file",
-              style: { display: "none" },
-              ref: fileRef,
-              onChange: handleAttach,
-            }),
-            e("i", {
-              className: "tile-icon",
-              "data-lucide": "paperclip",
-              style: { width: "18px", height: "18px" },
-            })
-          ),
-          e(
-            "label",
-            { className: "icon-btn", title: "Открыть камеру" },
-            e("input", {
-              type: "file",
-              accept: "image/*",
-              capture: "environment",
-              style: { display: "none" },
-              ref: cameraRef,
-              onChange: handleCamera,
-            }),
-            e("i", {
-              className: "tile-icon",
-              "data-lucide": "camera",
-              style: { width: "18px", height: "18px" },
-            })
-          ),
-          e(
-            "button",
-            {
-              className: "icon-btn",
-              title: "Позвонить",
-              onClick: handlePhoneCall,
+          {
+            style: {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
             },
-            e("i", {
-              className: "tile-icon",
-              "data-lucide": "phone",
-              style: { width: "18px", height: "18px" },
+          },
+          e(
+            "div",
+            {
+              style: { display: "flex", alignItems: "center", gap: "8px" },
+            },
+            e(
+              "button",
+              { className: "back", onClick: handleBackClick },
+              e("i", {
+                className: "tile-icon",
+                "data-lucide": "arrow-left",
+                style: { width: "16px", height: "16px" },
+              }),
+              "Назад"
+            ),
+            e("span", { style: { fontWeight: 700 } }, getChatTitle())
+          )
+        ),
+        e(
+          "div",
+          { className: "chat-wrap" },
+          e(
+            "div",
+            { ref: messagesRef, className: "messages" },
+            (chats || []).map((m) => {
+              if (m.type === "text")
+                return e(
+                  "div",
+                  { key: m.id, className: "bubble me" },
+                  m.text,
+                  e(
+                    "div",
+                    { className: "msg-meta" },
+                    new Date(m.ts).toLocaleTimeString()
+                  )
+                );
+              if (m.type === "image")
+                return e(
+                  "div",
+                  { key: m.id, className: "bubble me" },
+                  e("img", {
+                    src: m.url,
+                    style: { maxWidth: 220, borderRadius: 8 },
+                  }),
+                  e(
+                    "div",
+                    { className: "msg-meta" },
+                    new Date(m.ts).toLocaleTimeString()
+                  )
+                );
+              if (m.type === "file")
+                return e(
+                  "div",
+                  { key: m.id, className: "bubble me" },
+                  e(
+                    "div",
+                    { className: "file-preview" },
+                    e(
+                      "a",
+                      { href: m.url, target: "_blank" },
+                      m.fileName || "Файл"
+                    )
+                  ),
+                  e(
+                    "div",
+                    { className: "msg-meta" },
+                    new Date(m.ts).toLocaleTimeString()
+                  )
+                );
+              return e(
+                "div",
+                { key: m.id, className: "bubble me" },
+                JSON.stringify(m)
+              );
             })
           ),
           e(
-            "button",
-            {
-              className: "btn btn-sm btn-primary",
-              onClick: handleSend,
-            },
-            e("i", {
-              className: "tile-icon",
-              "data-lucide": "send",
-              style: { width: "16px", height: "16px" },
-            })
+            "div",
+            { className: "chat-input" },
+            e("input", {
+              type: "text",
+              placeholder: isArchived
+                ? "Чат завершен"
+                : "Напишите сообщение...",
+              value: text,
+              onChange: (e) => setText(e.target.value),
+              onKeyDown: (ev) => {
+                if (ev.key === "Enter") handleSend();
+              },
+              disabled: isArchived,
+            }),
+            e(
+              "div",
+              { className: "chat-actions" },
+              e(
+                "label",
+                { className: "icon-btn", title: "Прикрепить файл" },
+                e("input", {
+                  type: "file",
+                  style: { display: "none" },
+                  ref: fileRef,
+                  onChange: handleAttach,
+                }),
+                e("i", {
+                  className: "tile-icon",
+                  "data-lucide": "paperclip",
+                  style: { width: "18px", height: "18px" },
+                })
+              ),
+              e(
+                "label",
+                { className: "icon-btn", title: "Открыть камеру" },
+                e("input", {
+                  type: "file",
+                  accept: "image/*",
+                  capture: "environment",
+                  style: { display: "none" },
+                  ref: cameraRef,
+                  onChange: handleCamera,
+                }),
+                e("i", {
+                  className: "tile-icon",
+                  "data-lucide": "camera",
+                  style: { width: "18px", height: "18px" },
+                })
+              ),
+              e(
+                "button",
+                {
+                  className: "icon-btn",
+                  title: "Позвонить",
+                  onClick: handlePhoneCall,
+                },
+                e("i", {
+                  className: "tile-icon",
+                  "data-lucide": "phone",
+                  style: { width: "18px", height: "18px" },
+                })
+              ),
+              e(
+                "button",
+                {
+                  className: "btn btn-sm btn-primary",
+                  onClick: handleSend,
+                },
+                e("i", {
+                  className: "tile-icon",
+                  "data-lucide": "send",
+                  style: { width: "16px", height: "16px" },
+                })
+              )
+            )
           )
         )
-      )
-    )
-  );
-}
+      );
+    }
 
     function ArchivePage({archive, navigate}){
       return e('div',null,
@@ -1814,6 +1873,8 @@
         );
       }
 
+      const hasMessages = archivedChat.messages && archivedChat.messages.length > 0;
+
       return e('div',null,
         e('div',{className:'instr-header'},
           e('button',{className:'back', onClick:()=> navigate('#/archive')},
@@ -1830,9 +1891,9 @@
           e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
             e('i',{className:'tile-icon', 'data-lucide':archivedChat.chatId === 'client' ? 'message-circle' : 'headphones', style:{width:'16px',height:'16px'}}),
             e('div',{style:{opacity:0.8}}, `Чат: ${
-  archivedChat.chatId === 'curus' ? 'ЦУРУС' : 
-  archivedChat.chatId === 'client' ? 'ТП Клиента' : 'СППОУС'
-}`)
+              archivedChat.chatId === 'curus' ? 'ЦУРУС' : 
+              archivedChat.chatId === 'client' ? 'ТП Клиента' : 'СППОУС'
+            }`)
           ),
           e('div',{style:{display:'flex', alignItems:'center', gap:'8px', marginBottom:'8px'}},
             e('i',{className:'tile-icon', 'data-lucide':'calendar', style:{width:'16px',height:'16px'}}),
@@ -1844,15 +1905,20 @@
           )
         ),
         e('div',{className:'archive-messages'},
-          (archivedChat.messages || []).map(m => {
-            if(m.type==='text') return e('div',{key:m.id,className:'bubble me'}, m.text, e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
-            if(m.type==='image') return e('div',{key:m.id,className:'bubble me'}, e('img',{src:m.url, style:{maxWidth:220,borderRadius:8}}), e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
-            if(m.type==='file') return e('div',{key:m.id,className:'bubble me'},
-              e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
-              e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
-            );
-            return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
-          })
+          hasMessages 
+            ? (archivedChat.messages || []).map(m => {
+                if(m.type==='text') return e('div',{key:m.id,className:'bubble me'}, m.text, e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+                if(m.type==='image') return e('div',{key:m.id,className:'bubble me'}, e('img',{src:m.url, style:{maxWidth:220,borderRadius:8}}), e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString()));
+                if(m.type==='file') return e('div',{key:m.id,className:'bubble me'},
+                  e('div',{className:'file-preview'}, e('a',{href:m.url, target:'_blank'}, m.fileName || 'Файл')),
+                  e('div',{className:'msg-meta'}, new Date(m.ts).toLocaleTimeString())
+                );
+                return e('div',{key:m.id,className:'bubble me'}, JSON.stringify(m));
+              })
+            : e('div',{style:{textAlign:'center',padding:'40px',opacity:0.7}},
+                e('i',{className:'tile-icon', 'data-lucide':'message-circle', style:{fontSize:'32px',marginBottom:'12px',display:'block'}}),
+                'В этом обращении нет сообщений'
+              )
         )
       );
     }
