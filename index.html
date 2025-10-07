@@ -594,7 +594,181 @@
       overflow-y: auto;
       border: 1px solid var(--glass-border);
     }
+    @media (max-width: 400px) {
+  .chat-input {
+    flex-wrap: nowrap;
+    padding: 8px;
+    gap: 4px;
+  }
+  
+  .chat-input input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .chat-actions {
+    flex-shrink: 0;
+    gap: 2px;
+  }
+  
+  .icon-btn {
+    padding: 6px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+  
+  .icon-btn .tile-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .btn.btn-sm {
+    padding: 6px 8px;
+    font-size: 10px;
+    min-width: 45px;
+    white-space: nowrap;
+  }
+}
 
+@media (max-width: 380px) {
+  .chat-input {
+    gap: 3px;
+  }
+  
+  .chat-input input[type="text"] {
+    padding: 8px 6px;
+    font-size: 13px;
+    min-width: 120px;
+  }
+  
+  .chat-actions {
+    gap: 1px;
+  }
+  
+  .icon-btn {
+    padding: 5px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+  }
+  
+  .btn.btn-sm {
+    padding: 5px 6px;
+    font-size: 9px;
+    min-width: 40px;
+    gap: 2px;
+  }
+  
+  .btn.btn-sm .tile-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-input {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .chat-input input[type="text"] {
+    flex: 1 1 100%;
+    order: 1;
+    min-width: 0;
+    margin-bottom: 4px;
+  }
+  
+  .chat-actions {
+    order: 2;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0;
+  }
+  
+  .icon-btn {
+    flex: 1;
+    max-width: 32px;
+    padding: 6px;
+  }
+  
+  .btn.btn-sm {
+    flex: 2;
+    max-width: 80px;
+    padding: 6px 4px;
+    font-size: 10px;
+  }
+}
+
+/* Альтернативный вариант - скрыть текст на кнопке */
+@media (max-width: 340px) {
+  .chat-actions .btn.btn-sm {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    min-width: 32px;
+  }
+  
+  .chat-actions .btn.btn-sm span {
+    display: none;
+  }
+  
+  .chat-actions .btn.btn-sm .tile-icon {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .chat-input input[type="text"] {
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+}
+
+/* Еще более компактный вариант для 320px */
+@media (max-width: 320px) {
+  .chat-input {
+    padding: 6px;
+    gap: 4px;
+  }
+  
+  .chat-input input[type="text"] {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  
+  .chat-actions {
+    gap: 1px;
+  }
+  
+  .icon-btn {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    padding: 4px;
+  }
+  
+  .icon-btn .tile-icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .btn.btn-sm {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 4px;
+  }
+  
+  .btn.btn-sm .tile-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
     /* small screens adjustments */
     @media (max-width: 560px) {
   .brand h1 { font-size: 16px; }
@@ -650,6 +824,7 @@
     height: 40px;
   }
 }
+
   </style>
 </head>
 <body>
@@ -1075,7 +1250,7 @@
                 setTimeout(() => {
                   sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
                   sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
-                  setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 3000);
+                  setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
                 }, 2000);
               }, 2000);
             }
@@ -1121,11 +1296,11 @@
             setTimeout(() => {
               sendMessage(chatId, {type: 'text', text: "Здравствуйте, меня зовут Ольга, я оператор технической поддержки клиента. Какой у Вас вопрос"});
               sendMessage(chatId, {type: 'text', text: "Идет звонок..."});
-              setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 5000);
+              setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
             }, 2000);
           } else {
             sendMessage(chatId, {type: 'text', text: "Звонок продолжается"});
-            setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 3000);
+            setTimeout(() => showQuestionSolvedModal(chatId, 'client'), 6000);
           }
         };
       };
@@ -1204,7 +1379,7 @@
             setTimeout(() => {
               sendMessage(chatId, {type: 'text', text: "Здравствуйте! Я оператор СППОУС, меня зовут Игорь, какой у Вас вопрос"});
               sendMessage(chatId, {type: 'text', text: "Идет звонок"});
-              setTimeout(() => showQuestionSolvedModal(chatId, 'sppous'), 3000);
+              setTimeout(() => showQuestionSolvedModal(chatId, 'sppous'), 6000);
             }, 2000);
           }
         }, 3000);
